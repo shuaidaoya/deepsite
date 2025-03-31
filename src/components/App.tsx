@@ -157,40 +157,40 @@ function App() {
         <DeployButton html={html} error={error} auth={auth} />
       </Header>
       <main className="max-lg:flex-col flex w-full">
-        <div
-          ref={editor}
-          className="w-full h-[30dvh] lg:h-full relative"
-          onClick={(e) => {
-            if (isAiWorking) {
-              e.preventDefault();
-              e.stopPropagation();
-              toast.warn("Please wait for the AI to finish working.");
-            }
-          }}
-        >
+        <div ref={editor} className="w-full h-[30dvh] lg:h-full relative">
           <Tabs />
-          <Editor
-            language="html"
-            theme="vs-dark"
-            className={classNames(
-              "h-[calc(30dvh-41px)] lg:h-[calc(100dvh-96px)]",
-              {
-                "pointer-events-none": isAiWorking,
-              }
-            )}
-            value={html}
-            onValidate={(markers) => {
-              if (markers?.length > 0) {
-                setError(true);
+          <div
+            onClick={(e) => {
+              if (isAiWorking) {
+                e.preventDefault();
+                e.stopPropagation();
+                toast.warn("Please wait for the AI to finish working.");
               }
             }}
-            onChange={(value) => {
-              const newValue = value ?? "";
-              setHtml(newValue);
-              setError(false);
-            }}
-            onMount={(editor) => (editorRef.current = editor)}
-          />
+          >
+            <Editor
+              language="html"
+              theme="vs-dark"
+              className={classNames(
+                "h-[calc(30dvh-41px)] lg:h-[calc(100dvh-96px)]",
+                {
+                  "pointer-events-none": !isAiWorking,
+                }
+              )}
+              value={html}
+              onValidate={(markers) => {
+                if (markers?.length > 0) {
+                  setError(true);
+                }
+              }}
+              onChange={(value) => {
+                const newValue = value ?? "";
+                setHtml(newValue);
+                setError(false);
+              }}
+              onMount={(editor) => (editorRef.current = editor)}
+            />
+          </div>
           <AskAI
             html={html}
             setHtml={setHtml}

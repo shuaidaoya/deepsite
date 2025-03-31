@@ -1,6 +1,7 @@
 import classNames from "classnames";
 import { useRef } from "react";
 import { TbReload } from "react-icons/tb";
+import { toast } from "react-toastify";
 
 function Preview({
   html,
@@ -30,6 +31,13 @@ function Preview({
     <div
       ref={ref}
       className="w-full border-l border-gray-900 bg-white h-[calc(70dvh-53px)] lg:h-[calc(100dvh-54px)] relative"
+      onClick={(e) => {
+        if (isAiWorking) {
+          e.preventDefault();
+          e.stopPropagation();
+          toast.warn("Please wait for the AI to finish working.");
+        }
+      }}
     >
       <iframe
         ref={iframeRef}
