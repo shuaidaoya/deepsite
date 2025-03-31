@@ -3,12 +3,19 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import { createRepo, uploadFiles, whoAmI } from "@huggingface/hub";
+import {
+  createRepo,
+  uploadFiles,
+  whoAmI,
+  spaceInfo,
+  fileExists,
+} from "@huggingface/hub";
 import { InferenceClient } from "@huggingface/inference";
 import bodyParser from "body-parser";
 
 import checkUser from "./middlewares/checkUser.js";
 import { PROVIDERS } from "./utils/providers.js";
+import { type } from "os";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -29,6 +36,10 @@ const MAX_REQUESTS_PER_IP = 4;
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "dist")));
+
+const getPTag = (repoId) => {
+  return `<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - <a href="https://enzostvs-deepsite.hf.space?remix=${repoId}" style="color: #fff;text-decoration: underline;" target="_blank" >🧬 Remix</a></p>`;
+};
 
 app.get("/api/login", (_req, res) => {
   res.redirect(
@@ -103,18 +114,6 @@ app.post("/api/deploy", checkUser, async (req, res) => {
     });
   }
 
-  let newHtml = html;
-
-  if (!path) {
-    newHtml = html.replace(
-      /<\/body>/,
-      `<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <a href="https://enzostvs-deepsite.hf.space" style="color: #fff;" target="_blank" >DeepSite</a> <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;"></p></body>`
-    );
-  }
-
-  const file = new Blob([newHtml], { type: "text/html" });
-  file.name = "index.html"; // Add name property to the Blob
-
   const { hf_token } = req.cookies;
   try {
     const repo = {
@@ -123,6 +122,7 @@ app.post("/api/deploy", checkUser, async (req, res) => {
     };
 
     let readme;
+    let newHtml = html;
 
     if (!path || path === "") {
       const { name: username } = await whoAmI({ accessToken: hf_token });
@@ -136,6 +136,9 @@ app.post("/api/deploy", checkUser, async (req, res) => {
 
       const repoId = `${username}/${newTitle}`;
       repo.name = repoId;
+
+      newHtml = html.replace(/<\/body>/, `${getPTag(repoId)}</body>`);
+
       await createRepo({
         repo,
         accessToken: hf_token,
@@ -153,6 +156,9 @@ tags:
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference`;
     }
+
+    const file = new Blob([newHtml], { type: "text/html" });
+    file.name = "index.html"; // Add name property to the Blob
 
     const files = [file];
     if (readme) {
@@ -313,6 +319,44 @@ app.post("/api/ask-ai", async (req, res) => {
       res.end();
     }
   }
+});
+
+app.get("/api/remix/:username/:repo", async (req, res) => {
+  const { username, repo } = req.params;
+  const { hf_token } = req.cookies;
+
+  const token = hf_token || process.env.DEFAULT_HF_TOKEN;
+
+  const repoId = `${username}/${repo}`;
+  const space = await spaceInfo({
+    name: repoId,
+  });
+
+  console.log(space);
+
+  if (!space || space.sdk !== "static" || space.private) {
+    return res.status(404).send({
+      ok: false,
+      message: "Space not found",
+    });
+  }
+
+  const url = `https://huggingface.co/spaces/${repoId}/raw/main/index.html`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    return res.status(404).send({
+      ok: false,
+      message: "Space not found",
+    });
+  }
+  let html = await response.text();
+  // remove the last p tag including this url https://enzostvs-deepsite.hf.space
+  html = html.replace(getPTag(repoId), "");
+
+  res.status(200).send({
+    ok: true,
+    html,
+  });
 });
 
 app.get("*", (_req, res) => {

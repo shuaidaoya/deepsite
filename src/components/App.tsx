@@ -2,7 +2,13 @@ import { useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import classNames from "classnames";
 import { editor } from "monaco-editor";
-import { useMount, useUnmount, useEvent, useLocalStorage } from "react-use";
+import {
+  useMount,
+  useUnmount,
+  useEvent,
+  useLocalStorage,
+  useSearchParam,
+} from "react-use";
 import { toast } from "react-toastify";
 
 import Header from "./header/header";
@@ -15,6 +21,9 @@ import Preview from "./preview/preview";
 
 function App() {
   const [htmlStorage, , removeHtmlStorage] = useLocalStorage("html_content");
+  const remix = useSearchParam("remix");
+
+  console.log("REMIX => ", remix);
 
   const preview = useRef<HTMLDivElement>(null);
   const editor = useRef<HTMLDivElement>(null);
@@ -37,6 +46,24 @@ function App() {
       setAuth(data);
     } else {
       setAuth(undefined);
+    }
+  };
+
+  const fetchRemix = async () => {
+    if (!remix) return;
+    const res = await fetch(`/api/remix/${remix}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.html) {
+        setHtml(data.html);
+        toast.success("Remix content loaded successfully.");
+      }
+      // remove search param from url
+      const url = new URL(window.location.href);
+      url.searchParams.delete("remix");
+      window.history.replaceState({}, document.title, url.toString());
+    } else {
+      toast.error("Failed to load remix content.");
     }
   };
 
@@ -111,6 +138,7 @@ function App() {
   useMount(() => {
     // Fetch user data
     fetchMe();
+    fetchRemix();
 
     // Restore content from storage if available
     if (htmlStorage) {
