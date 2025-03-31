@@ -26,6 +26,9 @@ function App() {
   const [html, setHtml] = useState((htmlStorage as string) ?? defaultHTML);
   const [isAiWorking, setisAiWorking] = useState(false);
   const [auth, setAuth] = useState<Auth | undefined>(undefined);
+  const [currentView, setCurrentView] = useState<"editor" | "preview">(
+    "editor"
+  );
 
   const fetchMe = async () => {
     const res = await fetch("/api/@me");
@@ -157,7 +160,15 @@ function App() {
         <DeployButton html={html} error={error} auth={auth} />
       </Header>
       <main className="max-lg:flex-col flex w-full">
-        <div ref={editor} className="w-full h-[30dvh] lg:h-full relative">
+        <div
+          ref={editor}
+          className={classNames(
+            "w-full h-[calc(100dvh-49px)] lg:h-[calc(100dvh-54px)] relative overflow-hidden transition-all duration-200",
+            {
+              "max-lg:h-0": currentView === "preview",
+            }
+          )}
+        >
           <Tabs />
           <div
             onClick={(e) => {
@@ -172,9 +183,9 @@ function App() {
               language="html"
               theme="vs-dark"
               className={classNames(
-                "h-[calc(30dvh-41px)] lg:h-[calc(100dvh-96px)]",
+                "h-[calc(100dvh-90px)] lg:h-[calc(100dvh-96px)]",
                 {
-                  "pointer-events-none": !isAiWorking,
+                  "pointer-events-none": isAiWorking,
                 }
               )}
               value={html}
@@ -196,6 +207,7 @@ function App() {
             setHtml={setHtml}
             isAiWorking={isAiWorking}
             setisAiWorking={setisAiWorking}
+            setView={setCurrentView}
             onScrollToBottom={() => {
               editorRef.current?.revealLine(
                 editorRef.current?.getModel()?.getLineCount() ?? 0
@@ -205,13 +217,14 @@ function App() {
         </div>
         <div
           ref={resizer}
-          className="bg-gray-700 hover:bg-blue-500 w-2 cursor-col-resize h-[calc(100dvh-54px)] max-lg:hidden"
+          className="bg-gray-700 hover:bg-blue-500 w-2 cursor-col-resize h-[calc(100dvh-53px)] max-lg:hidden"
         />
         <Preview
           html={html}
           isResizing={isResizing}
           isAiWorking={isAiWorking}
           ref={preview}
+          setView={setCurrentView}
         />
       </main>
     </div>

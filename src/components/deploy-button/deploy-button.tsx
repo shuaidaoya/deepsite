@@ -76,8 +76,8 @@ function DeployButton({
   return (
     <div className="relative flex items-center justify-end">
       {auth && (
-        <p className="mr-3 text-sm text-gray-300">
-          Connected as{" "}
+        <p className="mr-3 text-xs lg:text-sm text-gray-300">
+          <span className="max-lg:hidden">Connected as </span>
           <a
             href={`https://huggingface.co/${auth.preferred_username}`}
             target="_blank"

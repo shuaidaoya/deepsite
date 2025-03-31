@@ -29,9 +29,7 @@ export const defaultHTML = `<!DOCTYPE html>
       }
       @media screen and (max-width: 640px) {
         .arrow {
-          top: 12px;
-          left: 56px;
-          transform: rotate(180deg);
+          display: none;
         }
       }
     </style>

@@ -3,12 +3,13 @@ import { RiSparkling2Fill } from "react-icons/ri";
 import { GrSend } from "react-icons/gr";
 import classNames from "classnames";
 import { toast } from "react-toastify";
+import { useLocalStorage } from "react-use";
+import { MdPreview } from "react-icons/md";
 
 import Login from "../login/login";
 import { defaultHTML } from "./../../../utils/consts";
 import SuccessSound from "./../../assets/success.mp3";
 import Settings from "../settings/settings";
-import { useLocalStorage } from "react-use";
 
 function AskAI({
   html,
@@ -16,11 +17,13 @@ function AskAI({
   onScrollToBottom,
   isAiWorking,
   setisAiWorking,
+  setView,
 }: {
   html: string;
   setHtml: (html: string) => void;
   onScrollToBottom: () => void;
   isAiWorking: boolean;
+  setView: React.Dispatch<React.SetStateAction<"editor" | "preview">>;
   setisAiWorking: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [open, setOpen] = useState(false);
@@ -80,6 +83,7 @@ function AskAI({
             setisAiWorking(false);
             setHasAsked(true);
             audio.play();
+            setView("preview");
 
             // Now we have the complete HTML including </html>, so set it to be sure
             const finalDoc = contentResponse.match(
@@ -135,6 +139,15 @@ function AskAI({
         isAiWorking ? "animate-pulse" : ""
       }`}
     >
+      {defaultHTML !== html && (
+        <button
+          className="bg-white lg:hidden -translate-y-[calc(100%+8px)] absolute left-0 top-0 shadow-md text-gray-950 text-xs font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 hover:brightness-150 transition-all duration-100 cursor-pointer"
+          onClick={() => setView("preview")}
+        >
+          <MdPreview />
+          Back to Preview
+        </button>
+      )}
       <div className="w-full relative flex items-center justify-between">
         <RiSparkling2Fill className="text-lg lg:text-xl text-gray-500 group-focus-within:text-pink-500" />
         <input
