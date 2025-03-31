@@ -5,8 +5,10 @@ import classNames from "classnames";
 import { toast } from "react-toastify";
 
 import Login from "../login/login";
-import { defaultHTML } from "../../utils/consts";
+import { defaultHTML } from "./../../../utils/consts";
 import SuccessSound from "./../../assets/success.mp3";
+import Settings from "../settings/settings";
+import { useLocalStorage } from "react-use";
 
 function AskAI({
   html,
@@ -25,12 +27,17 @@ function AskAI({
   const [prompt, setPrompt] = useState("");
   const [hasAsked, setHasAsked] = useState(false);
   const [previousPrompt, setPreviousPrompt] = useState("");
+  const [provider, setProvider] = useLocalStorage("provider", "fireworks-ai");
+  const [openProvider, setOpenProvider] = useState(false);
+  const [providerError, setProviderError] = useState("");
+
   const audio = new Audio(SuccessSound);
   audio.volume = 0.5;
 
   const callAi = async () => {
     if (isAiWorking || !prompt.trim()) return;
     setisAiWorking(true);
+    setProviderError("");
 
     let contentResponse = "";
     let lastRenderTime = 0;
@@ -39,6 +46,7 @@ function AskAI({
         method: "POST",
         body: JSON.stringify({
           prompt,
+          provider,
           ...(html === defaultHTML ? {} : { html }),
           ...(previousPrompt ? { previousPrompt } : {}),
         }),
@@ -51,8 +59,10 @@ function AskAI({
           const res = await request.json();
           if (res.openLogin) {
             setOpen(true);
+          } else if (res.openSelectProvider) {
+            setOpenProvider(true);
+            setProviderError(res.message);
           } else {
-            // don't show toast if it's a login error
             toast.error(res.message);
           }
           setisAiWorking(false);
@@ -130,7 +140,7 @@ function AskAI({
         <input
           type="text"
           disabled={isAiWorking}
-          className="w-full bg-transparent max-lg:text-sm outline-none pl-3 text-white placeholder:text-gray-500 font-code"
+          className="w-full bg-transparent max-lg:text-sm outline-none px-3 text-white placeholder:text-gray-500 font-code"
           placeholder={
             hasAsked ? "What do you want to ask AI next?" : "Ask AI anything..."
           }
@@ -142,13 +152,22 @@ function AskAI({
             }
           }}
         />
-        <button
-          disabled={isAiWorking}
-          className="relative overflow-hidden cursor-pointer flex-none flex items-center justify-center rounded-full text-sm font-semibold size-8 text-center bg-pink-500 hover:bg-pink-400 text-white shadow-sm dark:shadow-highlight/20 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-          onClick={callAi}
-        >
-          <GrSend className="-translate-x-[1px]" />
-        </button>
+        <div className="flex items-center justify-end gap-2">
+          <Settings
+            provider={provider as string}
+            onChange={setProvider}
+            open={openProvider}
+            error={providerError}
+            onClose={setOpenProvider}
+          />
+          <button
+            disabled={isAiWorking}
+            className="relative overflow-hidden cursor-pointer flex-none flex items-center justify-center rounded-full text-sm font-semibold size-8 text-center bg-pink-500 hover:bg-pink-400 text-white shadow-sm dark:shadow-highlight/20 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+            onClick={callAi}
+          >
+            <GrSend className="-translate-x-[1px]" />
+          </button>
+        </div>
       </div>
       <div
         className={classNames(

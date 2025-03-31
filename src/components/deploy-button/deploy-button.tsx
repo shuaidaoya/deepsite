@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import SpaceIcon from "@/assets/space.svg";
 import Loading from "../loading/loading";
 import Login from "../login/login";
-import { Auth } from "../../utils/types";
+import { Auth } from "./../../../utils/types";
 
 const MsgToast = ({ url }: { url: string }) => (
   <div className="w-full flex items-center justify-center gap-3">

@@ -14,7 +14,7 @@ function Tabs({ children }: { children?: React.ReactNode }) {
       </div>
       <div className="flex items-center justify-end gap-3">
         <a
-          href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324?inference_provider=fireworks-ai"
+          href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324"
           target="_blank"
           className="text-[12px] text-gray-300 hover:brightness-120 flex items-center gap-1 font-code"
         >

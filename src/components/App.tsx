@@ -7,10 +7,10 @@ import { toast } from "react-toastify";
 
 import Header from "./header/header";
 import DeployButton from "./deploy-button/deploy-button";
-import { defaultHTML } from "../utils/consts";
+import { defaultHTML } from "./../../utils/consts";
 import Tabs from "./tabs/tabs";
 import AskAI from "./ask-ai/ask-ai";
-import { Auth } from "../utils/types";
+import { Auth } from "./../../utils/types";
 import Preview from "./preview/preview";
 
 function App() {

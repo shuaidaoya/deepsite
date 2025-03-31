@@ -8,6 +8,7 @@ import { InferenceClient } from "@huggingface/inference";
 import bodyParser from "body-parser";
 
 import checkUser from "./middlewares/checkUser.js";
+import { PROVIDERS } from "./utils/providers.js";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -174,7 +175,7 @@ Check out the configuration reference at https://huggingface.co/docs/hub/spaces-
 });
 
 app.post("/api/ask-ai", async (req, res) => {
-  const { prompt, html, previousPrompt } = req.body;
+  const { prompt, html, previousPrompt, provider } = req.body;
   if (!prompt) {
     return res.status(400).send({
       ok: false,
@@ -192,7 +193,6 @@ app.post("/api/ask-ai", async (req, res) => {
     "0.0.0.0";
 
   if (!hf_token) {
-    // Rate limit requests from the same IP address, to prevent abuse, free is limited to 2 requests per IP
     ipAddresses.set(ip, (ipAddresses.get(ip) || 0) + 1);
     if (ipAddresses.get(ip) > MAX_REQUESTS_PER_IP) {
       return res.status(429).send({
@@ -213,10 +213,26 @@ app.post("/api/ask-ai", async (req, res) => {
   const client = new InferenceClient(token);
   let completeResponse = "";
 
+  const selectedProvider =
+    PROVIDERS.find((providerItem) => providerItem.id === provider) ??
+    PROVIDERS[0];
+
+  let TOKENS_USED = prompt?.length;
+  if (previousPrompt) TOKENS_USED += previousPrompt.length;
+  if (html) TOKENS_USED += html.length;
+
+  if (TOKENS_USED >= selectedProvider.max_tokens) {
+    return res.status(400).send({
+      ok: false,
+      openSelectProvider: true,
+      message: `Context is too long. ${selectedProvider.name} allow ${selectedProvider.max_tokens} max tokens.`,
+    });
+  }
+
   try {
     const chatCompletion = client.chatCompletionStream({
       model: MODEL_ID,
-      provider: "hyperbolic",
+      provider: selectedProvider.id,
       messages: [
         {
           role: "system",
@@ -244,7 +260,7 @@ app.post("/api/ask-ai", async (req, res) => {
           content: prompt,
         },
       ],
-      max_tokens: 12_000,
+      max_tokens: selectedProvider.max_tokens,
     });
 
     while (true) {
@@ -254,25 +270,37 @@ app.post("/api/ask-ai", async (req, res) => {
       }
       const chunk = value.choices[0]?.delta?.content;
       if (chunk) {
-        res.write(chunk);
-        completeResponse += chunk;
+        if (provider !== "sambanova") {
+          res.write(chunk);
+          completeResponse += chunk;
 
-        // Break when HTML is complete
-        if (completeResponse.includes("</html>")) {
-          break;
+          if (completeResponse.includes("</html>")) {
+            break;
+          }
+        } else {
+          let newChunk = chunk;
+          if (chunk.includes("</html>")) {
+            // Replace everything after the last </html> tag with an empty string
+            newChunk = newChunk.replace(/<\/html>[\s\S]*/, "</html>");
+          }
+          completeResponse += newChunk;
+          res.write(newChunk);
+          if (newChunk.includes("</html>")) {
+            break;
+          }
         }
       }
     }
-
     // End the response stream
+    // return the total_tokens used to the client
     res.end();
   } catch (error) {
-    console.error("Error:", error);
-    // If we haven't sent a response yet, send an error
     if (!res.headersSent) {
       res.status(500).send({
         ok: false,
-        message: `You probably reached the MAX_TOKENS limit, context is too long. You can start a new conversation by refreshing the page.`,
+        // use generic error,
+        message:
+          "An error occurred while processing your request. Please try again or switch provider.",
       });
     } else {
       // Otherwise end the stream
