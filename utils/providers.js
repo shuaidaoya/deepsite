@@ -1,22 +1,22 @@
-export const PROVIDERS = [
-  {
+export const PROVIDERS = {
+  "fireworks-ai": {
     name: "Fireworks AI",
+    max_tokens: 131_000,
     id: "fireworks-ai",
-    max_tokens: 131_000,
   },
-  {
+  nebius: {
     name: "Nebius AI Studio",
+    max_tokens: 131_000,
     id: "nebius",
-    max_tokens: 131_000,
   },
-  {
+  sambanova: {
     name: "SambaNova",
-    id: "sambanova",
     max_tokens: 8_000,
+    id: "sambanova",
   },
-  {
+  hyperbolic: {
     name: "Hyperbolic",
-    id: "hyperbolic",
     max_tokens: 131_000,
+    id: "hyperbolic",
   },
-];
+};

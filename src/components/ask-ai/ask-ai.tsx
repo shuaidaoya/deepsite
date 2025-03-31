@@ -27,7 +27,7 @@ function AskAI({
   const [prompt, setPrompt] = useState("");
   const [hasAsked, setHasAsked] = useState(false);
   const [previousPrompt, setPreviousPrompt] = useState("");
-  const [provider, setProvider] = useLocalStorage("provider", "fireworks-ai");
+  const [provider, setProvider] = useLocalStorage("provider", "auto");
   const [openProvider, setOpenProvider] = useState(false);
   const [providerError, setProviderError] = useState("");
 

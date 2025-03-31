@@ -51,55 +51,73 @@ function Settings({
           </span>
           Customize Settings
         </header>
-        <main className="px-4 pt-3 pb-4 space-y-3">
+        <main className="px-4 pt-3 pb-4 space-y-4">
+          {/* toggle using tailwind css */}
+          <div>
+            <div className="flex items-center justify-between">
+              <p className="text-gray-800 text-sm font-medium flex items-center justify-between">
+                Use auto-provider
+              </p>
+              <div
+                className={classNames(
+                  "bg-gray-200 rounded-full w-10 h-6 flex items-center justify-between p-1 cursor-pointer transition-all duration-200",
+                  {
+                    "!bg-blue-500": provider === "auto",
+                  }
+                )}
+                onClick={() => {
+                  onChange(provider === "auto" ? "fireworks-ai" : "auto");
+                }}
+              >
+                <div
+                  className={classNames(
+                    "w-4 h-4 rounded-full shadow-md transition-all duration-200 bg-white",
+                    {
+                      "translate-x-4": provider !== "auto",
+                    }
+                  )}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              We'll automatically select the best provider for you based on your
+              prompt.
+            </p>
+          </div>
           {error !== "" && (
             <p className="text-red-500 text-sm font-medium mb-2 flex items-center justify-between bg-red-500/10 p-2 rounded-md">
               {error}
             </p>
           )}
           <label className="block">
-            <p className="text-gray-500 text-sm font-medium mb-2 flex items-center justify-between">
+            <p className="text-gray-800 text-sm font-medium mb-2 flex items-center justify-between">
               Inference Provider
             </p>
             <div className="grid grid-cols-2 gap-1.5">
-              {PROVIDERS.map((item: any) => (
+              {Object.keys(PROVIDERS).map((id: string) => (
                 <div
-                  key={item.id}
+                  key={id}
                   className={classNames(
                     "text-gray-600 text-sm font-medium cursor-pointer border p-2 rounded-md flex items-center justify-start gap-2",
                     {
                       "bg-blue-500/10 border-blue-500/15 text-blue-500":
-                        item.id === provider,
-                      "hover:bg-gray-100 border-gray-100": item.id !== provider,
+                        id === provider,
+                      "hover:bg-gray-100 border-gray-100": id !== provider,
                     }
                   )}
                   onClick={() => {
-                    onChange(item.id);
+                    onChange(id);
                   }}
                 >
                   <img
-                    src={`/providers/${item.id}.svg`}
-                    alt={item.name}
+                    src={`/providers/${id}.svg`}
+                    alt={PROVIDERS[id].name}
                     className="size-5"
                   />
-                  {item.name}
+                  {PROVIDERS[id].name}
                 </div>
               ))}
             </div>
-            {/* <input
-              type="password"
-              autoComplete="off"
-              className="mr-2 border rounded-md px-3 py-1.5 border-gray-300 w-full text-sm"
-              placeholder="hf_******"
-              value={tokenStorage[0] as string}
-              onChange={(e) => {
-                if (e.target.value.length > 0) {
-                  tokenStorage[1](e.target.value);
-                } else {
-                  tokenStorage[2]();
-                }
-              }}
-            /> */}
           </label>
         </main>
       </div>

@@ -213,15 +213,19 @@ app.post("/api/ask-ai", async (req, res) => {
   const client = new InferenceClient(token);
   let completeResponse = "";
 
-  const selectedProvider =
-    PROVIDERS.find((providerItem) => providerItem.id === provider) ??
-    PROVIDERS[0];
-
   let TOKENS_USED = prompt?.length;
   if (previousPrompt) TOKENS_USED += previousPrompt.length;
   if (html) TOKENS_USED += html.length;
 
-  if (TOKENS_USED >= selectedProvider.max_tokens) {
+  const DEFAULT_PROVIDER = PROVIDERS["fireworks-ai"];
+  const selectedProvider =
+    provider === "auto"
+      ? TOKENS_USED < PROVIDERS.sambanova.max_tokens
+        ? PROVIDERS.sambanova
+        : DEFAULT_PROVIDER
+      : PROVIDERS[provider] ?? DEFAULT_PROVIDER;
+
+  if (provider !== "auto" && TOKENS_USED >= selectedProvider.max_tokens) {
     return res.status(400).send({
       ok: false,
       openSelectProvider: true,
@@ -236,8 +240,7 @@ app.post("/api/ask-ai", async (req, res) => {
       messages: [
         {
           role: "system",
-          content:
-            "ONLY USE HTML, CSS AND JAVASCRIPT. If you want to use ICON make sure to import the library first. Try to create the best UI possible by using only HTML, CSS and JAVASCRIPT. Also, try to ellaborate as much as you can, to create something unique. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE",
+          content: `ONLY USE HTML, CSS AND JAVASCRIPT. If you want to use ICON make sure to import the library first. Try to create the best UI possible by using only HTML, CSS and JAVASCRIPT. Use as much as you can TailwindCSS for the CSS, if you can't do something with TailwindCSS, then use custom CSS (make sure to import <script src="https://cdn.tailwindcss.com"></script> in the head). Also, try to ellaborate as much as you can, to create something unique. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE`,
         },
         ...(previousPrompt
           ? [
@@ -260,7 +263,11 @@ app.post("/api/ask-ai", async (req, res) => {
           content: prompt,
         },
       ],
-      max_tokens: selectedProvider.max_tokens,
+      ...(selectedProvider.id !== "sambanova"
+        ? {
+            max_tokens: selectedProvider.max_tokens,
+          }
+        : {}),
     });
 
     while (true) {
