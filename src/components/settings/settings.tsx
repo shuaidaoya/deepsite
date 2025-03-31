@@ -73,7 +73,7 @@ function Settings({
                   className={classNames(
                     "w-4 h-4 rounded-full shadow-md transition-all duration-200 bg-white",
                     {
-                      "translate-x-4": provider !== "auto",
+                      "translate-x-4": provider === "auto",
                     }
                   )}
                 />
