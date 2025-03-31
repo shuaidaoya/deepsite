@@ -14,9 +14,14 @@ export const PROVIDERS = {
     max_tokens: 8_000,
     id: "sambanova",
   },
-  hyperbolic: {
-    name: "Hyperbolic",
-    max_tokens: 131_000,
-    id: "hyperbolic",
+  novita: {
+    name: "NovitaAI",
+    max_tokens: 16_000,
+    id: "novita",
   },
+  // hyperbolic: {
+  //   name: "Hyperbolic",
+  //   max_tokens: 131_000,
+  //   id: "hyperbolic",
+  // },
 };

@@ -299,13 +299,11 @@ app.post("/api/ask-ai", async (req, res) => {
       }
     }
     // End the response stream
-    // return the total_tokens used to the client
     res.end();
   } catch (error) {
     if (!res.headersSent) {
       res.status(500).send({
         ok: false,
-        // use generic error,
         openSelectProvider: true,
         message:
           "An error occurred while processing your request. Please try again or switch provider.",
