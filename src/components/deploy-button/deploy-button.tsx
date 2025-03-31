@@ -59,7 +59,10 @@ function DeployButton({
         toast.success(
           <MsgToast
             url={`https://huggingface.co/spaces/${response.path ?? path}`}
-          />
+          />,
+          {
+            autoClose: 10000,
+          }
         );
         setPath(response.path);
       } else {
