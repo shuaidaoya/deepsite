@@ -306,6 +306,7 @@ app.post("/api/ask-ai", async (req, res) => {
       res.status(500).send({
         ok: false,
         // use generic error,
+        openSelectProvider: true,
         message:
           "An error occurred while processing your request. Please try again or switch provider.",
       });
