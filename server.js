@@ -15,7 +15,6 @@ import bodyParser from "body-parser";
 
 import checkUser from "./middlewares/checkUser.js";
 import { PROVIDERS } from "./utils/providers.js";
-import { type } from "os";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -137,8 +136,6 @@ app.post("/api/deploy", checkUser, async (req, res) => {
       const repoId = `${username}/${newTitle}`;
       repo.name = repoId;
 
-      newHtml = html.replace(/<\/body>/, `${getPTag(repoId)}</body>`);
-
       await createRepo({
         repo,
         accessToken: hf_token,
@@ -157,6 +154,7 @@ tags:
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference`;
     }
 
+    newHtml = html.replace(/<\/body>/, `${getPTag(repo.name)}</body>`);
     const file = new Blob([newHtml], { type: "text/html" });
     file.name = "index.html"; // Add name property to the Blob
 
