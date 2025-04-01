@@ -307,12 +307,12 @@ app.post("/api/ask-ai", async (req, res) => {
     // End the response stream
     res.end();
   } catch (error) {
+    console.log(error);
     if (!res.headersSent) {
       res.status(500).send({
         ok: false,
-        openSelectProvider: true,
         message:
-          "An error occurred while processing your request. Please try again or switch provider.",
+          "An error occurred while processing your request. Please try again later.",
       });
     } else {
       // Otherwise end the stream
