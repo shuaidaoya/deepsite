@@ -9,6 +9,7 @@ export const defaultHTML = `<!DOCTYPE html>
         display: flex;
         justify-content: center;
         align-items: center;
+        overflow: hidden;
         height: 100dvh;
         font-family: "Arial", sans-serif;
         text-align: center;
