@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { RiSparkling2Fill } from "react-icons/ri";
 import { GrSend } from "react-icons/gr";
@@ -10,6 +11,7 @@ import Login from "../login/login";
 import { defaultHTML } from "./../../../utils/consts";
 import SuccessSound from "./../../assets/success.mp3";
 import Settings from "../settings/settings";
+import SpeechPrompt from "../speech-prompt/speech-prompt";
 
 function AskAI({
   html,
@@ -166,6 +168,7 @@ function AskAI({
           }}
         />
         <div className="flex items-center justify-end gap-2">
+          <SpeechPrompt setPrompt={setPrompt} />
           <Settings
             provider={provider as string}
             onChange={setProvider}

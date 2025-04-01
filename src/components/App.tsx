@@ -23,8 +23,6 @@ function App() {
   const [htmlStorage, , removeHtmlStorage] = useLocalStorage("html_content");
   const remix = useSearchParam("remix");
 
-  console.log("REMIX => ", remix);
-
   const preview = useRef<HTMLDivElement>(null);
   const editor = useRef<HTMLDivElement>(null);
   const resizer = useRef<HTMLDivElement>(null);
