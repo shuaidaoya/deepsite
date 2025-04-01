@@ -10,20 +10,27 @@ function SpeechPrompt({
 }: {
   setPrompt: React.Dispatch<React.SetStateAction<string>>;
 }) {
-  const { transcript, listening, browserSupportsSpeechRecognition } =
-    useSpeechRecognition();
+  const {
+    transcript,
+    listening,
+    browserSupportsSpeechRecognition,
+    resetTranscript,
+  } = useSpeechRecognition();
 
   const startListening = () =>
     SpeechRecognition.startListening({ continuous: true });
 
-  if (!browserSupportsSpeechRecognition) {
-    return null;
-  }
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useUpdateEffect(() => {
     if (transcript) setPrompt(transcript);
   }, [transcript]);
+
+  useUpdateEffect(() => {
+    if (!listening) resetTranscript();
+  }, [listening]);
+
+  if (!browserSupportsSpeechRecognition) {
+    return null;
+  }
 
   return (
     <button
