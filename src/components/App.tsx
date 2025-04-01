@@ -58,13 +58,12 @@ function App() {
         setHtml(data.html);
         toast.success("Remix content loaded successfully.");
       }
-      // remove search param from url
-      const url = new URL(window.location.href);
-      url.searchParams.delete("remix");
-      window.history.replaceState({}, document.title, url.toString());
     } else {
       toast.error("Failed to load remix content.");
     }
+    const url = new URL(window.location.href);
+    url.searchParams.delete("remix");
+    window.history.replaceState({}, document.title, url.toString());
   };
 
   /**
