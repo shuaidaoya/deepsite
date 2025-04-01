@@ -188,7 +188,7 @@ function App() {
         <div
           ref={editor}
           className={classNames(
-            "w-full h-[calc(100dvh-49px)] lg:h-[calc(100dvh-54px)] relative overflow-hidden max-lg:transition-all max-lg:duration-200",
+            "w-full h-[calc(100dvh-49px)] lg:h-[calc(100dvh-54px)] relative overflow-hidden max-lg:transition-all max-lg:duration-200 select-none",
             {
               "max-lg:h-0": currentView === "preview",
             }
