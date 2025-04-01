@@ -15,6 +15,7 @@ import bodyParser from "body-parser";
 
 import checkUser from "./middlewares/checkUser.js";
 import { PROVIDERS } from "./utils/providers.js";
+import { COLORS } from "./utils/colors.js";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -140,11 +141,13 @@ app.post("/api/deploy", checkUser, async (req, res) => {
         repo,
         accessToken: hf_token,
       });
+      const colorFrom = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const colorTo = COLORS[Math.floor(Math.random() * COLORS.length)];
       readme = `---
 title: ${newTitle}
 emoji: 🐳
-colorFrom: blue
-colorTo: blue
+colorFrom: ${colorFrom}
+colorTo: ${colorTo}
 sdk: static
 pinned: false
 tags:
