@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    image: deepsite
+    ports:
+      - "30002:3000"
+    environment:
+      - NODE_ENV=production
+      - APP_PORT=3000
+    restart: unless-stopped

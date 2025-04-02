@@ -12,11 +12,12 @@ COPY --chown=1000 package.json package-lock.json ./
 # Copy the rest of the application files to the container
 COPY --chown=1000 . .
 
+# Install dependencies and build the application
 RUN npm install
 RUN npm run build
 
-# Expose the application port (assuming your app runs on port 3000)
+# Expose the application port (specified in the config)
 EXPOSE 5173
 
-# Start the application
-CMD ["npm", "start"]
+# Start the application with the server.js script
+CMD ["node", "server.js"]
