@@ -1,4 +1,4 @@
-name: 发布Docker镜像
+name: deploy-docker
 
 on:
   workflow_dispatch:
