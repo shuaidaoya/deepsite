@@ -86,7 +86,11 @@ app.get("/auth/login", async (req, res) => {
   return res.redirect(302, "/");
 });
 app.get("/auth/logout", (req, res) => {
-  res.clearCookie("hf_token");
+  res.clearCookie("hf_token", {
+    httpOnly: false,
+    secure: true,
+    sameSite: "none",
+  });
   return res.redirect(302, "/");
 });
 
