@@ -1,0 +1,60 @@
+{
+  "app": {
+    "title": "DeepSite",
+    "subtitle": "Imagine and Share in 1-Click"
+  },
+  "header": {
+    "new": "New"
+  },
+  "settings": {
+    "title": "AI Settings",
+    "aiInfo": "AI Info",
+    "maxTokenLimit": "Max Token Limit",
+    "configHint": "You can configure OpenAI models and API address through environment variables. Please refer to the .env.example file of the project."
+  },
+  "tabs": {
+    "editor": "Editor",
+    "preview": "Preview"
+  },
+  "editor": {
+    "resetConfirm": "You're about to reset the editor. Are you sure?"
+  },
+  "deploy": {
+    "deploy": "Deploy",
+    "login": "Login",
+    "deploying": "Deploying",
+    "success": "Deployed successfully!",
+    "error": "Failed to deploy",
+    "fixErrors": "Please fix errors before deploying"
+  },
+  "askAI": {
+    "placeholder": "Ask AI to update your HTML...",
+    "working": "Please wait for the AI to finish working.",
+    "clear": "Clear"
+  },
+  "toast": {
+    "contentRestored": "Previous HTML content restored from local storage.",
+    "remixLoaded": "Remix content loaded successfully.",
+    "remixFailed": "Failed to load remix content."
+  },
+  "language": {
+    "en": "English",
+    "zh": "中文"
+  },
+  "preview": {
+    "backToEditor": "Back to Editor",
+    "refreshPreview": "Refresh Preview",
+    "save": "Save",
+    "saveTooltip": "Save to Browser",
+    "copy": "Copy",
+    "copyTooltip": "Copy HTML",
+    "download": "Download",
+    "downloadTooltip": "Download HTML",
+    "saveSuccess": "HTML saved to browser successfully!",
+    "saveFailed": "Failed to save HTML to browser.",
+    "copySuccess": "HTML copied to clipboard!",
+    "copyFailed": "Failed to copy HTML.",
+    "downloadSuccess": "HTML downloaded successfully!",
+    "downloadFailed": "Failed to download HTML."
+  }
+} 

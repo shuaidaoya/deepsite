@@ -1,7 +1,9 @@
 import { ReactNode } from "react";
 import { MdAdd } from "react-icons/md";
+import { useTranslation } from "react-i18next";
 
 import Logo from "@/assets/logo.svg";
+import LanguageSwitcher from "../language-switcher/language-switcher";
 
 function Header({
   onReset,
@@ -10,6 +12,8 @@ function Header({
   onReset: () => void;
   children?: ReactNode;
 }) {
+  const { t } = useTranslation();
+  
   return (
     <header className="border-b border-gray-900 bg-gray-950 px-3 lg:px-6 py-2 flex justify-between items-center sticky top-0 z-20">
       <div className="flex items-center justify-start gap-3">
@@ -19,7 +23,7 @@ function Header({
             alt="DeepSite Logo"
             className="size-6 lg:size-8 mr-2"
           />
-          DeepSite
+          {t('app.title')}
         </h1>
         <p className="text-gray-700 max-md:hidden">|</p>
         <button
@@ -27,13 +31,16 @@ function Header({
           onClick={onReset}
         >
           <MdAdd className="mr-1 text-base" />
-          New
+          {t('header.new')}
         </button>
         <p className="text-gray-500 text-sm max-md:hidden">
-          Imagine and Share in 1-Click
+          {t('app.subtitle')}
         </p>
       </div>
-      {children}
+      <div className="flex items-center gap-2">
+        <LanguageSwitcher />
+        {children}
+      </div>
     </header>
   );
 }

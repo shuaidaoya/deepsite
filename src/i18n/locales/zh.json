@@ -1,0 +1,60 @@
+{
+  "app": {
+    "title": "DeepSite",
+    "subtitle": "一键构想与分享"
+  },
+  "header": {
+    "new": "新建"
+  },
+  "settings": {
+    "title": "AI 设置",
+    "aiInfo": "AI 信息",
+    "maxTokenLimit": "最大 Token 限制",
+    "configHint": "可通过环境变量配置 OpenAI 的模型和 API 地址。请参考项目的 .env.example 文件。"
+  },
+  "tabs": {
+    "editor": "编辑器",
+    "preview": "预览"
+  },
+  "editor": {
+    "resetConfirm": "您即将重置编辑器。确定吗？"
+  },
+  "deploy": {
+    "deploy": "部署",
+    "login": "登录",
+    "deploying": "正在部署",
+    "success": "部署成功！",
+    "error": "部署失败",
+    "fixErrors": "请在部署前修复错误"
+  },
+  "askAI": {
+    "placeholder": "请 AI 更新您的 HTML...",
+    "working": "请等待 AI 完成工作。",
+    "clear": "清除"
+  },
+  "toast": {
+    "contentRestored": "从本地存储恢复了之前的 HTML 内容。",
+    "remixLoaded": "成功加载 Remix 内容。",
+    "remixFailed": "加载 Remix 内容失败。"
+  },
+  "language": {
+    "en": "English",
+    "zh": "中文"
+  },
+  "preview": {
+    "backToEditor": "返回编辑器",
+    "refreshPreview": "刷新预览",
+    "save": "保存",
+    "saveTooltip": "保存到浏览器",
+    "copy": "复制",
+    "copyTooltip": "复制 HTML",
+    "download": "下载",
+    "downloadTooltip": "下载 HTML",
+    "saveSuccess": "HTML 已成功保存到浏览器！",
+    "saveFailed": "保存 HTML 到浏览器失败。",
+    "copySuccess": "HTML 已复制到剪贴板！",
+    "copyFailed": "复制 HTML 失败。",
+    "downloadSuccess": "HTML 已成功下载！",
+    "downloadFailed": "下载 HTML 失败。"
+  }
+} 

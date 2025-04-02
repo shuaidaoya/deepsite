@@ -3,25 +3,29 @@ import { useState } from "react";
 import classNames from "classnames";
 import { toast } from "react-toastify";
 import { FaPowerOff } from "react-icons/fa6";
+import { useTranslation } from "react-i18next";
 
 import SpaceIcon from "@/assets/space.svg";
 import Loading from "../loading/loading";
 import Login from "../login/login";
 import { Auth } from "./../../../utils/types";
 
-const MsgToast = ({ url }: { url: string }) => (
-  <div className="w-full flex items-center justify-center gap-3">
-    Your space is live!
-    <button
-      className="bg-black text-sm block text-white rounded-md px-3 py-1.5 hover:bg-gray-900 cursor-pointer"
-      onClick={() => {
-        window.open(url, "_blank");
-      }}
-    >
-      See Space
-    </button>
-  </div>
-);
+const MsgToast = ({ url }: { url: string }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="w-full flex items-center justify-center gap-3">
+      {t('deploy.success')}
+      <button
+        className="bg-black text-sm block text-white rounded-md px-3 py-1.5 hover:bg-gray-900 cursor-pointer"
+        onClick={() => {
+          window.open(url, "_blank");
+        }}
+      >
+        See Space
+      </button>
+    </div>
+  );
+};
 
 function DeployButton({
   html,
@@ -32,6 +36,7 @@ function DeployButton({
   error: boolean;
   auth?: Auth;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [path, setPath] = useState<string | undefined>(undefined);
@@ -114,7 +119,7 @@ function DeployButton({
         )}
         onClick={() => setOpen(!open)}
       >
-        {path ? "Update Space" : "Deploy to Space"}
+        {path ? "Update Space" : t('deploy.deploy')}
       </button>
       <div
         className={classNames(
@@ -184,7 +189,7 @@ function DeployButton({
               )}
               {error && (
                 <p className="text-red-500 text-xs bg-red-500/10 rounded-md p-2">
-                  Your code has errors. Fix them before deploying.
+                  {t('deploy.fixErrors')}
                 </p>
               )}
               <div className="pt-2 text-right">

@@ -3,6 +3,8 @@ import { useRef } from "react";
 import { TbReload } from "react-icons/tb";
 import { toast } from "react-toastify";
 import { FaLaptopCode } from "react-icons/fa6";
+import PreviewActions from "./preview-actions";
+import { useTranslation } from "react-i18next";
 
 function Preview({
   html,
@@ -17,6 +19,7 @@ function Preview({
   setView: React.Dispatch<React.SetStateAction<"editor" | "preview">>;
   ref: React.RefObject<HTMLDivElement | null>;
 }) {
+  const { t } = useTranslation();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   const handleRefreshIframe = () => {
@@ -38,7 +41,7 @@ function Preview({
         if (isAiWorking) {
           e.preventDefault();
           e.stopPropagation();
-          toast.warn("Please wait for the AI to finish working.");
+          toast.warn(t("askAI.working"));
         }
       }}
     >
@@ -50,21 +53,24 @@ function Preview({
         })}
         srcDoc={html}
       />
-      <div className="flex items-center justify-start gap-3 absolute bottom-3 lg:bottom-5 max-lg:left-3 lg:right-5">
-        <button
-          className="lg:hidden bg-gray-950 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
-          onClick={() => setView("editor")}
-        >
-          <FaLaptopCode />
-          Back to Editor
-        </button>
-        <button
-          className="bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 lg:border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
-          onClick={handleRefreshIframe}
-        >
-          <TbReload />
-          Refresh Preview
-        </button>
+      <div className="flex items-center justify-between gap-3 absolute bottom-3 lg:bottom-5 right-3 left-3 lg:right-5 lg:left-auto">
+        <div className="flex items-center gap-2">
+          <button
+            className="lg:hidden bg-gray-950 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
+            onClick={() => setView("editor")}
+          >
+            <FaLaptopCode />
+            {t("preview.backToEditor")}
+          </button>
+          <button
+            className="bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 lg:border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
+            onClick={handleRefreshIframe}
+          >
+            <TbReload />
+            {t("preview.refreshPreview")}
+          </button>
+        </div>
+        <PreviewActions html={html} isDisabled={isAiWorking || isResizing} />
       </div>
     </div>
   );

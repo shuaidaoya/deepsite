@@ -1,23 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import classNames from "classnames";
-
 import { PiGearSixFill } from "react-icons/pi";
-// @ts-expect-error not needed
-import { PROVIDERS } from "./../../../utils/providers";
+import { useTranslation } from "react-i18next";
+import { PROVIDERS } from "../../../utils/providers.js";
 
 function Settings({
   open,
   onClose,
-  provider,
-  error,
-  onChange,
 }: {
   open: boolean;
-  provider: string;
-  error?: string;
   onClose: React.Dispatch<React.SetStateAction<boolean>>;
-  onChange: (provider: string) => void;
 }) {
+  const { t } = useTranslation();
+  
   return (
     <div className="">
       <button
@@ -47,78 +41,26 @@ function Settings({
       >
         <header className="flex items-center text-sm px-4 py-2 border-b border-gray-200 gap-2 bg-gray-100 font-semibold text-gray-700">
           <span className="text-xs bg-blue-500/10 text-blue-500 rounded-full pl-1.5 pr-2.5 py-0.5 flex items-center justify-start gap-1.5">
-            Provider
+            {t('settings.aiInfo')}
           </span>
-          Customize Settings
         </header>
         <main className="px-4 pt-3 pb-4 space-y-4">
-          {/* toggle using tailwind css */}
-          <div>
-            <div className="flex items-center justify-between">
-              <p className="text-gray-800 text-sm font-medium flex items-center justify-between">
-                Use auto-provider
+          <div className="text-gray-600 text-sm font-medium border p-3 rounded-md flex items-center justify-start gap-2 bg-blue-500/10 border-blue-500/15">
+            <img
+              src="/providers/logo.svg"
+              alt={PROVIDERS.openai.name}
+              className="size-5"
+            />
+            <div>
+              <p className="font-semibold text-blue-600">{PROVIDERS.openai.name}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {t('settings.maxTokenLimit')}: {PROVIDERS.openai.max_tokens.toLocaleString()}
               </p>
-              <div
-                className={classNames(
-                  "bg-gray-200 rounded-full w-10 h-6 flex items-center justify-between p-1 cursor-pointer transition-all duration-200",
-                  {
-                    "!bg-blue-500": provider === "auto",
-                  }
-                )}
-                onClick={() => {
-                  onChange(provider === "auto" ? "fireworks-ai" : "auto");
-                }}
-              >
-                <div
-                  className={classNames(
-                    "w-4 h-4 rounded-full shadow-md transition-all duration-200 bg-white",
-                    {
-                      "translate-x-4": provider === "auto",
-                    }
-                  )}
-                />
-              </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              We'll automatically select the best provider for you based on your
-              prompt.
-            </p>
           </div>
-          {error !== "" && (
-            <p className="text-red-500 text-sm font-medium mb-2 flex items-center justify-between bg-red-500/10 p-2 rounded-md">
-              {error}
-            </p>
-          )}
-          <label className="block">
-            <p className="text-gray-800 text-sm font-medium mb-2 flex items-center justify-between">
-              Inference Provider
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {Object.keys(PROVIDERS).map((id: string) => (
-                <div
-                  key={id}
-                  className={classNames(
-                    "text-gray-600 text-sm font-medium cursor-pointer border p-2 rounded-md flex items-center justify-start gap-2",
-                    {
-                      "bg-blue-500/10 border-blue-500/15 text-blue-500":
-                        id === provider,
-                      "hover:bg-gray-100 border-gray-100": id !== provider,
-                    }
-                  )}
-                  onClick={() => {
-                    onChange(id);
-                  }}
-                >
-                  <img
-                    src={`/providers/${id}.svg`}
-                    alt={PROVIDERS[id].name}
-                    className="size-5"
-                  />
-                  {PROVIDERS[id].name}
-                </div>
-              ))}
-            </div>
-          </label>
+          <div className="text-xs text-gray-500 bg-gray-100 p-3 rounded-md">
+            {t('settings.configHint')}
+          </div>
         </main>
       </div>
     </div>

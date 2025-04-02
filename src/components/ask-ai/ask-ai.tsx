@@ -4,10 +4,8 @@ import { RiSparkling2Fill } from "react-icons/ri";
 import { GrSend } from "react-icons/gr";
 import classNames from "classnames";
 import { toast } from "react-toastify";
-import { useLocalStorage } from "react-use";
 import { MdPreview } from "react-icons/md";
-
-import Login from "../login/login";
+import { useTranslation } from "react-i18next";
 import { defaultHTML } from "./../../../utils/consts";
 import SuccessSound from "./../../assets/success.mp3";
 import Settings from "../settings/settings";
@@ -28,13 +26,12 @@ function AskAI({
   setView: React.Dispatch<React.SetStateAction<"editor" | "preview">>;
   setisAiWorking: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [hasAsked, setHasAsked] = useState(false);
   const [previousPrompt, setPreviousPrompt] = useState("");
-  const [provider, setProvider] = useLocalStorage("provider", "auto");
-  const [openProvider, setOpenProvider] = useState(false);
-  const [providerError, setProviderError] = useState("");
+  const [openSettings, setOpenSettings] = useState(false);
 
   const audio = new Audio(SuccessSound);
   audio.volume = 0.5;
@@ -42,7 +39,6 @@ function AskAI({
   const callAi = async () => {
     if (isAiWorking || !prompt.trim()) return;
     setisAiWorking(true);
-    setProviderError("");
 
     let contentResponse = "";
     let lastRenderTime = 0;
@@ -51,7 +47,6 @@ function AskAI({
         method: "POST",
         body: JSON.stringify({
           prompt,
-          provider,
           ...(html === defaultHTML ? {} : { html }),
           ...(previousPrompt ? { previousPrompt } : {}),
         }),
@@ -61,14 +56,17 @@ function AskAI({
       });
       if (request && request.body) {
         if (!request.ok) {
-          const res = await request.json();
-          if (res.openLogin) {
-            setOpen(true);
-          } else if (res.openSelectProvider) {
-            setOpenProvider(true);
-            setProviderError(res.message);
-          } else {
-            toast.error(res.message);
+          try {
+            const res = await request.json();
+            if (res.openLogin) {
+              setOpen(true);
+            } else {
+              toast.error(res.message || "An error occurred while requesting AI");
+            }
+          } catch (parseError) {
+            // 处理 JSON 解析错误
+            toast.error("Failed to process response from server");
+            console.error("JSON parsing error:", parseError);
           }
           setisAiWorking(false);
           return;
@@ -93,6 +91,16 @@ function AskAI({
             )?.[0];
             if (finalDoc) {
               setHtml(finalDoc);
+            } else if (contentResponse.includes("<html") && contentResponse.includes("<body")) {
+              // 尝试修复可能不完整的 HTML
+              let fixedHtml = contentResponse;
+              if (!fixedHtml.includes("</body>")) {
+                fixedHtml += "\n</body>";
+              }
+              if (!fixedHtml.includes("</html>")) {
+                fixedHtml += "\n</html>";
+              }
+              setHtml(fixedHtml);
             }
 
             return;
@@ -100,10 +108,36 @@ function AskAI({
 
           const chunk = decoder.decode(value, { stream: true });
           contentResponse += chunk;
-          const newHtml = contentResponse.match(/<!DOCTYPE html>[\s\S]*/)?.[0];
+          
+          // 尝试多种方式匹配有效的 HTML 内容
+          let newHtml = null;
+          
+          // 1. 尝试匹配完整的 DOCTYPE 开头
+          const doctypeMatch = contentResponse.match(/<!DOCTYPE html>[\s\S]*/);
+          if (doctypeMatch) {
+            newHtml = doctypeMatch[0];
+          } 
+          // 2. 尝试匹配 <html 开头
+          else {
+            const htmlMatch = contentResponse.match(/<html[\s\S]*/);
+            if (htmlMatch) {
+              newHtml = htmlMatch[0];
+            }
+            // 3. 尝试匹配 <body 开头
+            else {
+              const bodyMatch = contentResponse.match(/<body[\s\S]*/);
+              if (bodyMatch) {
+                newHtml = bodyMatch[0];
+              }
+            }
+          }
+          
           if (newHtml) {
             // Force-close the HTML tag so the iframe doesn't render half-finished markup
             let partialDoc = newHtml;
+            if (!partialDoc.includes("</body>") && partialDoc.includes("<body")) {
+              partialDoc += "\n</body>";
+            }
             if (!partialDoc.includes("</html>")) {
               partialDoc += "\n</html>";
             }
@@ -125,7 +159,7 @@ function AskAI({
         read();
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } catch (error: any) {
       setisAiWorking(false);
       toast.error(error.message);
@@ -147,7 +181,7 @@ function AskAI({
           onClick={() => setView("preview")}
         >
           <MdPreview />
-          Back to Preview
+          {t('tabs.preview')}
         </button>
       )}
       <div className="w-full relative flex items-center justify-between">
@@ -157,7 +191,7 @@ function AskAI({
           disabled={isAiWorking}
           className="w-full bg-transparent max-lg:text-sm outline-none px-3 text-white placeholder:text-gray-500 font-code"
           placeholder={
-            hasAsked ? "What do you want to ask AI next?" : "Ask AI anything..."
+            hasAsked ? t('askAI.placeholder') : t('askAI.placeholder')
           }
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -170,11 +204,8 @@ function AskAI({
         <div className="flex items-center justify-end gap-2">
           {/* <SpeechPrompt setPrompt={setPrompt} /> */}
           <Settings
-            provider={provider as string}
-            onChange={setProvider}
-            open={openProvider}
-            error={providerError}
-            onClose={setOpenProvider}
+            open={openSettings}
+            onClose={setOpenSettings}
           />
           <button
             disabled={isAiWorking}
@@ -202,11 +233,6 @@ function AskAI({
           }
         )}
       >
-        <Login html={html}>
-          <p className="text-gray-500 text-sm mb-3">
-            You reached the limit of free AI usage. Please login to continue.
-          </p>
-        </Login>
       </div>
     </div>
   );

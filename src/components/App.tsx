@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import classNames from "classnames";
 import { editor } from "monaco-editor";
@@ -10,16 +10,16 @@ import {
   useSearchParam,
 } from "react-use";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 import Header from "./header/header";
-import DeployButton from "./deploy-button/deploy-button";
 import { defaultHTML } from "./../../utils/consts";
 import Tabs from "./tabs/tabs";
 import AskAI from "./ask-ai/ask-ai";
-import { Auth } from "./../../utils/types";
 import Preview from "./preview/preview";
 
 function App() {
+  const { t } = useTranslation();
   const [htmlStorage, , removeHtmlStorage] = useLocalStorage("html_content");
   const remix = useSearchParam("remix");
 
@@ -29,23 +29,12 @@ function App() {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
   const [isResizing, setIsResizing] = useState(false);
-  const [error, setError] = useState(false);
   const [html, setHtml] = useState((htmlStorage as string) ?? defaultHTML);
   const [isAiWorking, setisAiWorking] = useState(false);
-  const [auth, setAuth] = useState<Auth | undefined>(undefined);
+
   const [currentView, setCurrentView] = useState<"editor" | "preview">(
     "editor"
   );
-
-  const fetchMe = async () => {
-    const res = await fetch("/api/@me");
-    if (res.ok) {
-      const data = await res.json();
-      setAuth(data);
-    } else {
-      setAuth(undefined);
-    }
-  };
 
   const fetchRemix = async () => {
     if (!remix) return;
@@ -54,10 +43,10 @@ function App() {
       const data = await res.json();
       if (data.html) {
         setHtml(data.html);
-        toast.success("Remix content loaded successfully.");
+        toast.success(t("toast.remixLoaded"));
       }
     } else {
-      toast.error("Failed to load remix content.");
+      toast.error(t("toast.remixFailed"));
     }
     const url = new URL(window.location.href);
     url.searchParams.delete("remix");
@@ -133,14 +122,12 @@ function App() {
 
   // Initialize component on mount
   useMount(() => {
-    // Fetch user data
-    fetchMe();
     fetchRemix();
 
     // Restore content from storage if available
     if (htmlStorage) {
       removeHtmlStorage();
-      toast.warn("Previous HTML content restored from local storage.");
+      toast.warn(t("toast.contentRestored"));
     }
 
     // Set initial layout based on window size
@@ -162,19 +149,26 @@ function App() {
     window.removeEventListener("resize", resetLayout);
   });
 
+  // 自动保存 HTML 内容到本地存储
+  useEffect(() => {
+    // 只有当 HTML 内容变化且不是默认内容时才保存
+    if (html !== defaultHTML) {
+      localStorage.setItem("html_content", html);
+    }
+  }, [html]);
+
   return (
     <div className="h-screen bg-gray-950 font-sans overflow-hidden">
       <Header
         onReset={() => {
           if (isAiWorking) {
-            toast.warn("Please wait for the AI to finish working.");
+            toast.warn(t("askAI.working"));
             return;
           }
           if (
-            window.confirm("You're about to reset the editor. Are you sure?")
+            window.confirm(t("editor.resetConfirm"))
           ) {
             setHtml(defaultHTML);
-            setError(false);
             removeHtmlStorage();
             editorRef.current?.revealLine(
               editorRef.current?.getModel()?.getLineCount() ?? 0
@@ -182,7 +176,6 @@ function App() {
           }
         }}
       >
-        <DeployButton html={html} error={error} auth={auth} />
       </Header>
       <main className="max-lg:flex-col flex w-full">
         <div
@@ -200,7 +193,7 @@ function App() {
               if (isAiWorking) {
                 e.preventDefault();
                 e.stopPropagation();
-                toast.warn("Please wait for the AI to finish working.");
+                toast.warn(t("askAI.working"));
               }
             }}
           >
@@ -216,13 +209,12 @@ function App() {
               value={html}
               onValidate={(markers) => {
                 if (markers?.length > 0) {
-                  setError(true);
+                  // todo
                 }
               }}
               onChange={(value) => {
                 const newValue = value ?? "";
                 setHtml(newValue);
-                setError(false);
               }}
               onMount={(editor) => (editorRef.current = editor)}
             />
