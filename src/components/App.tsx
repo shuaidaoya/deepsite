@@ -149,7 +149,7 @@ function App() {
     window.removeEventListener("resize", resetLayout);
   });
 
-  // 自动保存 HTML 内容到本地存储
+  // 自动保存 HTML 内容到本地存储（后台静默保存，无需用户操作）
   useEffect(() => {
     // 只有当 HTML 内容变化且不是默认内容时才保存
     if (html !== defaultHTML) {
@@ -242,6 +242,7 @@ function App() {
           isAiWorking={isAiWorking}
           ref={preview}
           setView={setCurrentView}
+          setHtml={setHtml}
         />
       </main>
     </div>

@@ -47,7 +47,7 @@ function Settings({
         <main className="px-4 pt-3 pb-4 space-y-4">
           <div className="text-gray-600 text-sm font-medium border p-3 rounded-md flex items-center justify-start gap-2 bg-blue-500/10 border-blue-500/15">
             <img
-              src="/providers/logo.svg"
+              src="/logo.svg"
               alt={PROVIDERS.openai.name}
               className="size-5"
             />

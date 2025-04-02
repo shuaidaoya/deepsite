@@ -11,12 +11,14 @@ function Preview({
   isResizing,
   isAiWorking,
   setView,
+  setHtml,
   ref,
 }: {
   html: string;
   isResizing: boolean;
   isAiWorking: boolean;
   setView: React.Dispatch<React.SetStateAction<"editor" | "preview">>;
+  setHtml?: (html: string) => void;
   ref: React.RefObject<HTMLDivElement | null>;
 }) {
   const { t } = useTranslation();
@@ -30,6 +32,14 @@ function Preview({
       setTimeout(() => {
         iframe.srcdoc = content;
       }, 10);
+    }
+  };
+
+  // 处理加载模板
+  const handleLoadTemplate = (templateHtml: string) => {
+    if (setHtml) {
+      setHtml(templateHtml);
+      toast.success(t('preview.templateLoaded'));
     }
   };
 
@@ -70,7 +80,11 @@ function Preview({
             {t("preview.refreshPreview")}
           </button>
         </div>
-        <PreviewActions html={html} isDisabled={isAiWorking || isResizing} />
+        <PreviewActions 
+          html={html} 
+          isDisabled={isAiWorking || isResizing} 
+          onLoadTemplate={handleLoadTemplate} 
+        />
       </div>
     </div>
   );
