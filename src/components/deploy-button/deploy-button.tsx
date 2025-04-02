@@ -2,11 +2,13 @@
 import { useState } from "react";
 import classNames from "classnames";
 import { toast } from "react-toastify";
+import { FaPowerOff } from "react-icons/fa6";
 
 import SpaceIcon from "@/assets/space.svg";
 import Loading from "../loading/loading";
 import Login from "../login/login";
 import { Auth } from "./../../../utils/types";
+import { useCookie } from "react-use";
 
 const MsgToast = ({ url }: { url: string }) => (
   <div className="w-full flex items-center justify-center gap-3">
@@ -31,6 +33,7 @@ function DeployButton({
   error: boolean;
   auth?: Auth;
 }) {
+  const [, , removeToken] = useCookie("hf_token");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [path, setPath] = useState<string | undefined>(undefined);
@@ -79,16 +82,29 @@ function DeployButton({
   return (
     <div className="relative flex items-center justify-end">
       {auth && (
-        <p className="mr-3 text-xs lg:text-sm text-gray-300">
-          <span className="max-lg:hidden">Connected as </span>
-          <a
-            href={`https://huggingface.co/${auth.preferred_username}`}
-            target="_blank"
-            className="underline hover:text-white"
+        <>
+          <button
+            className="mr-2 cursor-pointer"
+            onClick={() => {
+              if (confirm("Are you sure you want to log out?")) {
+                removeToken();
+                window.location.reload();
+              }
+            }}
           >
-            {auth.preferred_username}
-          </a>
-        </p>
+            <FaPowerOff className="text-lg text-red-500" />
+          </button>
+          <p className="mr-3 text-xs lg:text-sm text-gray-300">
+            <span className="max-lg:hidden">Connected as </span>
+            <a
+              href={`https://huggingface.co/${auth.preferred_username}`}
+              target="_blank"
+              className="underline hover:text-white"
+            >
+              {auth.preferred_username}
+            </a>
+          </p>
+        </>
       )}
       <button
         className={classNames(
