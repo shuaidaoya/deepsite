@@ -8,7 +8,6 @@ import SpaceIcon from "@/assets/space.svg";
 import Loading from "../loading/loading";
 import Login from "../login/login";
 import { Auth } from "./../../../utils/types";
-import { useCookie } from "react-use";
 
 const MsgToast = ({ url }: { url: string }) => (
   <div className="w-full flex items-center justify-center gap-3">
@@ -33,7 +32,6 @@ function DeployButton({
   error: boolean;
   auth?: Auth;
 }) {
-  const [, , removeToken] = useCookie("hf_token");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [path, setPath] = useState<string | undefined>(undefined);
@@ -87,8 +85,8 @@ function DeployButton({
             className="mr-2 cursor-pointer"
             onClick={() => {
               if (confirm("Are you sure you want to log out?")) {
-                removeToken();
-                window.location.reload();
+                // go to /auth/logout page
+                window.location.href = "/auth/logout";
               }
             }}
           >

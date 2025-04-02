@@ -85,6 +85,11 @@ app.get("/auth/login", async (req, res) => {
 
   return res.redirect(302, "/");
 });
+app.get("/auth/logout", (req, res) => {
+  res.clearCookie("hf_token");
+  return res.redirect(302, "/");
+});
+
 app.get("/api/@me", checkUser, async (req, res) => {
   const { hf_token } = req.cookies;
   try {
