@@ -61,7 +61,7 @@ function Preview({
         <a
           href="https://huggingface.co/spaces/victor/deepsite-gallery"
           target="_blank"
-          className="bg-indigo-500 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-indigo-500 hover:brightness-150 transition-all duration-100 cursor-pointer"
+          className="bg-gray-200 text-gray-950 text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-200 hover:bg-gray-300 transition-all duration-100 cursor-pointer"
         >
           🖼️ <span>Deepsite Gallery</span>
         </a>
