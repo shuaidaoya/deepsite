@@ -31,7 +31,7 @@ const PORT = process.env.APP_PORT || 3000;
 const REDIRECT_URI =
   process.env.REDIRECT_URI || `http://localhost:${PORT}/auth/login`;
 const MODEL_ID = "deepseek-ai/DeepSeek-V3-0324";
-const MAX_REQUESTS_PER_IP = 4;
+const MAX_REQUESTS_PER_IP = 2;
 
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -325,6 +325,13 @@ app.post("/api/ask-ai", async (req, res) => {
     // End the response stream
     res.end();
   } catch (error) {
+    if (error.message.includes("exceeded your monthly included credits")) {
+      return res.status(402).send({
+        ok: false,
+        openProModal: true,
+        message: error.message,
+      });
+    }
     if (!res.headersSent) {
       res.status(500).send({
         ok: false,
@@ -348,8 +355,6 @@ app.get("/api/remix/:username/:repo", async (req, res) => {
   const space = await spaceInfo({
     name: repoId,
   });
-
-  console.log(space);
 
   if (!space || space.sdk !== "static" || space.private) {
     return res.status(404).send({

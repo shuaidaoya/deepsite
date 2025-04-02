@@ -11,6 +11,7 @@ import Login from "../login/login";
 import { defaultHTML } from "./../../../utils/consts";
 import SuccessSound from "./../../assets/success.mp3";
 import Settings from "../settings/settings";
+import ProModal from "../pro-modal/pro-modal";
 // import SpeechPrompt from "../speech-prompt/speech-prompt";
 
 function AskAI({
@@ -35,6 +36,7 @@ function AskAI({
   const [provider, setProvider] = useLocalStorage("provider", "auto");
   const [openProvider, setOpenProvider] = useState(false);
   const [providerError, setProviderError] = useState("");
+  const [openProModal, setOpenProModal] = useState(false);
 
   const audio = new Audio(SuccessSound);
   audio.volume = 0.5;
@@ -67,6 +69,8 @@ function AskAI({
           } else if (res.openSelectProvider) {
             setOpenProvider(true);
             setProviderError(res.message);
+          } else if (res.openProModal) {
+            setOpenProModal(true);
           } else {
             toast.error(res.message);
           }
@@ -208,6 +212,11 @@ function AskAI({
           </p>
         </Login>
       </div>
+      <ProModal
+        html={html}
+        open={openProModal}
+        onClose={() => setOpenProModal(false)}
+      />
     </div>
   );
 }
