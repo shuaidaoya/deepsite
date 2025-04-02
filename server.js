@@ -237,7 +237,7 @@ app.post("/api/ask-ai", async (req, res) => {
   if (previousPrompt) TOKENS_USED += previousPrompt.length;
   if (html) TOKENS_USED += html.length;
 
-  const DEFAULT_PROVIDER = PROVIDERS["fireworks-ai"];
+  const DEFAULT_PROVIDER = PROVIDERS.novita;
   // const selectedProvider =
   //   provider === "auto"
   //     ? TOKENS_USED < PROVIDERS.sambanova.max_tokens
