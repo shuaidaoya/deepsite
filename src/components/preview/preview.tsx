@@ -64,7 +64,7 @@ function Preview({
             target="_blank"
             className="bg-gray-200 text-gray-950 text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-200 hover:bg-gray-300 transition-all duration-100 cursor-pointer"
           >
-            🖼️ <span>Deepsite Gallery</span>
+            🖼️ <span>DeepSite Gallery</span>
           </a>
           <button
             className="bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 lg:border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
