@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { RiSparkling2Fill } from "react-icons/ri";
 import { GrSend } from "react-icons/gr";
-import classNames from "classnames";
 import { toast } from "react-toastify";
 import { MdPreview } from "react-icons/md";
 import { useTranslation } from "react-i18next";
@@ -27,7 +26,6 @@ function AskAI({
   setisAiWorking: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [hasAsked, setHasAsked] = useState(false);
   const [previousPrompt, setPreviousPrompt] = useState("");
@@ -58,11 +56,7 @@ function AskAI({
         if (!request.ok) {
           try {
             const res = await request.json();
-            if (res.openLogin) {
-              setOpen(true);
-            } else {
-              toast.error(res.message || "An error occurred while requesting AI");
-            }
+            toast.error(res.message || "An error occurred while requesting AI");
           } catch (parseError) {
             // 处理 JSON 解析错误
             toast.error("Failed to process response from server");
@@ -163,9 +157,6 @@ function AskAI({
     } catch (error: any) {
       setisAiWorking(false);
       toast.error(error.message);
-      if (error.openLogin) {
-        setOpen(true);
-      }
     }
   };
 
@@ -215,24 +206,6 @@ function AskAI({
             <GrSend className="-translate-x-[1px]" />
           </button>
         </div>
-      </div>
-      <div
-        className={classNames(
-          "h-screen w-screen bg-black/20 fixed left-0 top-0 z-10",
-          {
-            "opacity-0 pointer-events-none": !open,
-          }
-        )}
-        onClick={() => setOpen(false)}
-      ></div>
-      <div
-        className={classNames(
-          "absolute top-0 -translate-y-[calc(100%+8px)] right-0 z-10 w-80 bg-white border border-gray-200 rounded-lg shadow-lg transition-all duration-75 overflow-hidden",
-          {
-            "opacity-0 pointer-events-none": !open,
-          }
-        )}
-      >
       </div>
     </div>
   );
