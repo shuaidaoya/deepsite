@@ -106,7 +106,11 @@ app.get("/api/@me", checkUser, async (req, res) => {
     const user = await request_user.json();
     res.send(user);
   } catch (err) {
-    res.clearCookie("hf_token");
+    res.clearCookie("hf_token", {
+      httpOnly: false,
+      secure: true,
+      sameSite: "none",
+    });
     res.status(401).send({
       ok: false,
       message: err.message,

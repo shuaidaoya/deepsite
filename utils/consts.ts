@@ -28,11 +28,6 @@ export const defaultHTML = `<!DOCTYPE html>
         color: #acacac;
         font-size: 32px;
       }
-      @media screen and (max-width: 640px) {
-        .arrow {
-          display: none;
-        }
-      }
     </style>
   </head>
   <body>
