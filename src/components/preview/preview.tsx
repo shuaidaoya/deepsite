@@ -50,29 +50,31 @@ function Preview({
         })}
         srcDoc={html}
       />
-      <div className="flex items-center justify-start gap-3 absolute bottom-3 lg:bottom-5 max-lg:left-3 lg:right-5">
-        <button
-          className="lg:hidden bg-gray-950 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
-          onClick={() => setView("editor")}
-        >
-          <FaLaptopCode />
-          Back to Editor
-        </button>
-        <a
-          href="https://huggingface.co/spaces/victor/deepsite-gallery"
-          target="_blank"
-          className="bg-gray-200 text-gray-950 text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-200 hover:bg-gray-300 transition-all duration-100 cursor-pointer"
-        >
-          🖼️ <span>Deepsite Gallery</span>
-        </a>
-        <button
-          className="bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 lg:border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
-          onClick={handleRefreshIframe}
-        >
-          <TbReload />
-          Refresh Preview
-        </button>
-      </div>
+      {!isAiWorking && (
+        <div className="flex items-center justify-start gap-3 absolute bottom-3 lg:bottom-5 max-lg:left-3 lg:right-5">
+          <button
+            className="lg:hidden bg-gray-950 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
+            onClick={() => setView("editor")}
+          >
+            <FaLaptopCode />
+            Back to Editor
+          </button>
+          <a
+            href="https://huggingface.co/spaces/victor/deepsite-gallery"
+            target="_blank"
+            className="bg-gray-200 text-gray-950 text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-200 hover:bg-gray-300 transition-all duration-100 cursor-pointer"
+          >
+            🖼️ <span>Deepsite Gallery</span>
+          </a>
+          <button
+            className="bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 lg:border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
+            onClick={handleRefreshIframe}
+          >
+            <TbReload />
+            Refresh Preview
+          </button>
+        </div>
+      )}
     </div>
   );
 }
