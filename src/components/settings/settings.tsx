@@ -1,16 +1,54 @@
 import classNames from "classnames";
 import { PiGearSixFill } from "react-icons/pi";
 import { useTranslation } from "react-i18next";
+import { useEffect, useState } from "react";
 import { PROVIDERS } from "../../../utils/providers.js";
+
+// 定义模板接口
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+}
 
 function Settings({
   open,
   onClose,
+  selectedTemplate,
+  onTemplateChange,
 }: {
   open: boolean;
   onClose: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedTemplate: string;
+  onTemplateChange: (templateId: string) => void;
 }) {
   const { t } = useTranslation();
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  // 加载模板列表
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/templates');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok && data.templates) {
+            setTemplates(data.templates);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch templates:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (open) {
+      fetchTemplates();
+    }
+  }, [open]);
   
   return (
     <div className="">
@@ -58,6 +96,37 @@ function Settings({
               </p>
             </div>
           </div>
+          
+          {/* 模板选择 */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-700">选择模板</h3>
+            
+            {loading ? (
+              <div className="flex justify-center py-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {templates.map((template) => (
+                  <div 
+                    key={template.id}
+                    className={classNames(
+                      "border rounded-md p-3 cursor-pointer hover:border-blue-400 transition-colors",
+                      {
+                        "border-blue-500 bg-blue-50": selectedTemplate === template.id,
+                        "border-gray-200": selectedTemplate !== template.id
+                      }
+                    )}
+                    onClick={() => onTemplateChange(template.id)}
+                  >
+                    <div className="font-medium text-sm text-gray-800">{template.name}</div>
+                    <div className="text-xs text-gray-500 mt-1">{template.description}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
           <div className="text-xs text-gray-500 bg-gray-100 p-3 rounded-md">
             {t('settings.configHint')}
           </div>

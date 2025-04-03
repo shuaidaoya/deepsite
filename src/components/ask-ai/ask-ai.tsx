@@ -17,6 +17,8 @@ function AskAI({
   isAiWorking,
   setisAiWorking,
   setView,
+  selectedTemplateId,
+  onTemplateChange
 }: {
   html: string;
   setHtml: (html: string) => void;
@@ -24,6 +26,8 @@ function AskAI({
   isAiWorking: boolean;
   setView: React.Dispatch<React.SetStateAction<"editor" | "preview">>;
   setisAiWorking: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedTemplateId: string;
+  onTemplateChange: (templateId: string) => void;
 }) {
   const { t } = useTranslation();
   const [prompt, setPrompt] = useState("");
@@ -33,6 +37,12 @@ function AskAI({
 
   const audio = new Audio(SuccessSound);
   audio.volume = 0.5;
+
+  // 本地模板变更处理函数
+  const handleTemplateChange = (templateId: string) => {
+    onTemplateChange(templateId);
+    localStorage.setItem("selected_template", templateId);
+  };
 
   const callAi = async () => {
     if (isAiWorking || !prompt.trim()) return;
@@ -47,6 +57,7 @@ function AskAI({
           prompt,
           ...(html === defaultHTML ? {} : { html }),
           ...(previousPrompt ? { previousPrompt } : {}),
+          templateId: selectedTemplateId, // 使用从props传入的模板ID
         }),
         headers: {
           "Content-Type": "application/json",
@@ -197,6 +208,8 @@ function AskAI({
           <Settings
             open={openSettings}
             onClose={setOpenSettings}
+            selectedTemplate={selectedTemplateId}
+            onTemplateChange={handleTemplateChange}
           />
           <button
             disabled={isAiWorking}

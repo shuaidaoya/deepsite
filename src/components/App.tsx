@@ -13,7 +13,7 @@ import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 
 import Header from "./header/header";
-import { defaultHTML } from "./../../utils/consts";
+import { defaultHTML } from "../../utils/consts";
 import Tabs from "./tabs/tabs";
 import AskAI from "./ask-ai/ask-ai";
 import Preview from "./preview/preview";
@@ -31,10 +31,85 @@ function App() {
   const [isResizing, setIsResizing] = useState(false);
   const [html, setHtml] = useState((htmlStorage as string) ?? defaultHTML);
   const [isAiWorking, setisAiWorking] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("vanilla");
 
   const [currentView, setCurrentView] = useState<"editor" | "preview">(
     "editor"
   );
+
+  // 处理模板变更
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+  };
+
+  // 监听模板选择变化
+  useEffect(() => {
+    const storedTemplateId = localStorage.getItem("selected_template");
+    if (storedTemplateId) {
+      setSelectedTemplateId(storedTemplateId);
+    }
+    
+    const templateChangeHandler = () => {
+      const templateId = localStorage.getItem("selected_template");
+      if (templateId && templateId !== selectedTemplateId) {
+        setSelectedTemplateId(templateId);
+      }
+    };
+    
+    window.addEventListener("storage", templateChangeHandler);
+    
+    return () => {
+      window.removeEventListener("storage", templateChangeHandler);
+    };
+  }, []);
+
+  // 重置HTML为指定模板的HTML
+  const resetToTemplate = async (templateId: string) => {
+    if (isAiWorking) {
+      toast.warn(t("askAI.working"));
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/templates/${templateId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok && data.template?.html) {
+          setHtml(data.template.html);
+          removeHtmlStorage();
+          editorRef.current?.revealLine(
+            editorRef.current?.getModel()?.getLineCount() ?? 0
+          );
+          toast.success(`已加载 ${data.template.name} 模板`);
+        }
+      } else {
+        toast.error("无法加载模板");
+      }
+    } catch (error) {
+      console.error("Error loading template:", error);
+      toast.error("加载模板时出错");
+    }
+  };
+
+  // 当选择的模板改变时，询问用户是否要切换到新模板的HTML
+  useEffect(() => {
+    const promptTemplateChange = async () => {
+      // 如果是首次加载或者内容是默认HTML，直接切换模板
+      if (html === defaultHTML) {
+        await resetToTemplate(selectedTemplateId);
+      } 
+      // 已经有修改的内容时，询问用户是否要替换
+      else if (selectedTemplateId !== localStorage.getItem("last_template_id")) {
+        if (window.confirm(`是否要将当前HTML替换为${selectedTemplateId}模板的HTML？`)) {
+          await resetToTemplate(selectedTemplateId);
+        }
+      }
+      // 记录上次使用的模板ID
+      localStorage.setItem("last_template_id", selectedTemplateId);
+    };
+    
+    promptTemplateChange();
+  }, [selectedTemplateId]);
 
   const fetchRemix = async () => {
     if (!remix) return;
@@ -168,11 +243,7 @@ function App() {
           if (
             window.confirm(t("editor.resetConfirm"))
           ) {
-            setHtml(defaultHTML);
-            removeHtmlStorage();
-            editorRef.current?.revealLine(
-              editorRef.current?.getModel()?.getLineCount() ?? 0
-            );
+            resetToTemplate(selectedTemplateId);
           }
         }}
       >
@@ -225,6 +296,8 @@ function App() {
             isAiWorking={isAiWorking}
             setisAiWorking={setisAiWorking}
             setView={setCurrentView}
+            selectedTemplateId={selectedTemplateId}
+            onTemplateChange={handleTemplateChange}
             onScrollToBottom={() => {
               editorRef.current?.revealLine(
                 editorRef.current?.getModel()?.getLineCount() ?? 0

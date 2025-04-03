@@ -14,6 +14,7 @@ import bodyParser from "body-parser";
 
 import { PROVIDERS } from "./utils/providers.js";
 import { COLORS } from "./utils/colors.js";
+import { TEMPLATES } from "./utils/templates.js";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -35,6 +36,40 @@ const getPTag = (repoId) => {
   return `<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - <a href="https://enzostvs-deepsite.hf.space?remix=${repoId}" style="color: #fff;text-decoration: underline;" target="_blank" >🧬 Remix</a></p>`;
 };
 
+// 获取所有可用模板
+app.get("/api/templates", (req, res) => {
+  const templates = Object.keys(TEMPLATES).map(key => ({
+    id: key,
+    name: TEMPLATES[key].name,
+    description: TEMPLATES[key].description,
+  }));
+  
+  return res.status(200).send({
+    ok: true,
+    templates,
+  });
+});
+
+// 获取指定模板的详细信息
+app.get("/api/templates/:id", (req, res) => {
+  const { id } = req.params;
+  
+  if (!TEMPLATES[id]) {
+    return res.status(404).send({
+      ok: false,
+      message: "Template not found",
+    });
+  }
+  
+  return res.status(200).send({
+    ok: true,
+    template: {
+      id,
+      ...TEMPLATES[id]
+    },
+  });
+});
+
 app.post("/api/deploy", async (req, res) => {
   const { html, title } = req.body;
   if (!html || !title) {
@@ -51,7 +86,7 @@ app.post("/api/deploy", async (req, res) => {
 });
 
 app.post("/api/ask-ai", async (req, res) => {
-  const { prompt, html, previousPrompt } = req.body;
+  const { prompt, html, previousPrompt, templateId } = req.body;
   if (!prompt) {
     return res.status(400).send({
       ok: false,
@@ -89,10 +124,15 @@ app.post("/api/ask-ai", async (req, res) => {
 
     console.log(`Using OpenAI API at: ${OPENAI_BASE_URL}`);
     
+    // 获取正确的系统提示词
+    const systemPrompt = templateId && TEMPLATES[templateId] 
+      ? TEMPLATES[templateId].systemPrompt 
+      : TEMPLATES.vanilla.systemPrompt;
+    
     const messages = [
       {
         role: "system",
-        content: `ONLY USE HTML, CSS AND JAVASCRIPT. If you want to use ICON make sure to import the library first. Try to create the best UI possible by using only HTML, CSS and JAVASCRIPT. Use as much as you can TailwindCSS for the CSS, if you can't do something with TailwindCSS, then use custom CSS (make sure to import <script src="https://cdn.tailwindcss.com"></script> in the head). Also, try to ellaborate as much as you can, to create something unique. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE`,
+        content: systemPrompt,
       },
     ];
 
