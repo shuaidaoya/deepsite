@@ -24,7 +24,7 @@ function Settings({
       </button>
       <div
         className={classNames(
-          "h-screen w-screen bg-black/20 fixed left-0 top-0 z-10",
+          "h-screen w-screen bg-black/20 fixed left-0 top-0 z-40",
           {
             "opacity-0 pointer-events-none": !open,
           }
@@ -33,7 +33,7 @@ function Settings({
       ></div>
       <div
         className={classNames(
-          "absolute top-0 -translate-y-[calc(100%+16px)] right-0 z-10 w-96 bg-white border border-gray-200 rounded-lg shadow-lg transition-all duration-75 overflow-hidden",
+          "absolute top-0 -translate-y-[calc(100%+16px)] right-0 z-40 w-96 bg-white border border-gray-200 rounded-lg shadow-lg transition-all duration-75 overflow-hidden",
           {
             "opacity-0 pointer-events-none": !open,
           }

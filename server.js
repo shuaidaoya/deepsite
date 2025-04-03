@@ -408,6 +408,13 @@ app.post("/api/ask-ai", async (req, res) => {
       }
     }
   } catch (error) {
+    if (error.message.includes("exceeded your monthly included credits")) {
+      return res.status(402).send({
+        ok: false,
+        openProModal: true,
+        message: error.message,
+      });
+    }
     if (!res.headersSent) {
       res.status(500).send({
         ok: false,
@@ -431,8 +438,6 @@ app.get("/api/remix/:username/:repo", async (req, res) => {
   const space = await spaceInfo({
     name: repoId,
   });
-
-  console.log(space);
 
   if (!space || space.sdk !== "static" || space.private) {
     return res.status(404).send({

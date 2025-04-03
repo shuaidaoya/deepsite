@@ -60,6 +60,8 @@ function AskAI({
             const res = await request.json();
             if (res.openLogin) {
               setOpen(true);
+          } else if (res.openProModal) {
+            setOpenProModal(true);
             } else {
               toast.error(res.message || "An error occurred while requesting AI");
             }
