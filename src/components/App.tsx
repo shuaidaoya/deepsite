@@ -17,7 +17,6 @@ import { defaultHTML } from "./../../utils/consts";
 import Tabs from "./tabs/tabs";
 import AskAI from "./ask-ai/ask-ai";
 import Preview from "./preview/preview";
-import DeployButton from "./deploy-button/deploy-button";
 
 function App() {
   const { t } = useTranslation();
@@ -245,7 +244,6 @@ function App() {
           setView={setCurrentView}
           setHtml={setHtml}
         />
-        <DeployButton />
       </main>
     </div>
   );
