@@ -81,7 +81,7 @@ function Preview({
             {t("preview.refreshPreview")}
           </button>
         </div>
-        <PreviewActions html={html} isDisabled={isAiWorking || isResizing} />
+        <PreviewActions html={html} isDisabled={isAiWorking || isResizing} onLoadTemplate={handleLoadTemplate} />
       </div>
       )}
     </div>
