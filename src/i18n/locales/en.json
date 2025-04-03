@@ -1,35 +1,35 @@
 {
   "app": {
     "title": "DeepSite",
-    "subtitle": "Imagine and Share in 1-Click"
+    "subtitle": "Imagine & share in one click"
   },
   "header": {
     "new": "New"
   },
   "settings": {
     "title": "AI Settings",
-    "aiInfo": "AI Info",
+    "aiInfo": "AI Information",
     "maxTokenLimit": "Max Token Limit",
-    "configHint": "You can configure OpenAI models and API address through environment variables. Please refer to the .env.example file of the project."
+    "configHint": "You can configure the OpenAI model and API URL through environment variables. Please refer to the .env.example file in the project."
   },
   "tabs": {
     "editor": "Editor",
     "preview": "Preview"
   },
   "editor": {
-    "resetConfirm": "You're about to reset the editor. Are you sure?"
+    "resetConfirm": "You are about to reset the editor. Are you sure?"
   },
   "deploy": {
     "deploy": "Deploy",
     "login": "Login",
     "deploying": "Deploying",
     "success": "Deployed successfully!",
-    "error": "Failed to deploy",
+    "error": "Deployment failed",
     "fixErrors": "Please fix errors before deploying"
   },
   "askAI": {
     "placeholder": "Ask AI to update your HTML...",
-    "working": "Please wait for the AI to finish working.",
+    "working": "Please wait while the AI is working.",
     "clear": "Clear"
   },
   "toast": {
@@ -42,10 +42,8 @@
     "zh": "中文"
   },
   "preview": {
-    "backToEditor": "Back to Editor",
-    "refreshPreview": "Refresh Preview",
-    "save": "Save",
-    "saveTooltip": "Save to Browser",
+    "backToEditor": "Back to editor",
+    "refreshPreview": "Refresh preview",
     "copy": "Copy",
     "copyTooltip": "Copy HTML",
     "download": "Download",
@@ -55,6 +53,42 @@
     "copySuccess": "HTML copied to clipboard!",
     "copyFailed": "Failed to copy HTML.",
     "downloadSuccess": "HTML downloaded successfully!",
-    "downloadFailed": "Failed to download HTML."
+    "downloadFailed": "Failed to download HTML.",
+    "saveToDB": "Save Template",
+    "saveToDBTooltip": "Save as template",
+    "templatesList": "Templates",
+    "templatesListTooltip": "View saved templates",
+    "templateLoaded": "Template loaded successfully!"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close"
+  },
+  "saveTemplate": {
+    "title": "Save HTML Template",
+    "templateName": "Template Name",
+    "templateNamePlaceholder": "Enter template name",
+    "titleRequired": "Template name is required",
+    "saveSuccess": "Template saved successfully!",
+    "saveFailed": "Failed to save template"
+  },
+  "templatesList": {
+    "title": "Saved Templates",
+    "noTemplates": "No saved templates",
+    "use": "Use",
+    "delete": "Delete",
+    "copy": "Copy",
+    "download": "Download",
+    "loadError": "Failed to load templates",
+    "deleteSuccess": "Template deleted successfully",
+    "deleteError": "Failed to delete template",
+    "copySuccess": "Template copied to clipboard successfully",
+    "copyError": "Failed to copy template",
+    "downloadSuccess": "Template downloaded successfully",
+    "downloadError": "Failed to download template"
+  },
+  "indexedDB": {
+    "notInitialized": "Database not initialized, please try again later"
   }
 } 

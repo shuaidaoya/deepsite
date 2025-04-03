@@ -43,9 +43,7 @@
   },
   "preview": {
     "backToEditor": "返回编辑器",
-    "refreshPreview": "刷新预览",
-    "save": "保存",
-    "saveTooltip": "保存到浏览器",
+    "refreshPreview": "刷新",
     "copy": "复制",
     "copyTooltip": "复制 HTML",
     "download": "下载",
@@ -55,6 +53,42 @@
     "copySuccess": "HTML 已复制到剪贴板！",
     "copyFailed": "复制 HTML 失败。",
     "downloadSuccess": "HTML 已成功下载！",
-    "downloadFailed": "下载 HTML 失败。"
+    "downloadFailed": "下载 HTML 失败。",
+    "saveToDB": "保存模板",
+    "saveToDBTooltip": "保存为模板",
+    "templatesList": "模板列表",
+    "templatesListTooltip": "查看已保存的模板",
+    "templateLoaded": "模板已成功加载！"
+  },
+  "common": {
+    "cancel": "取消",
+    "save": "保存",
+    "close": "关闭"
+  },
+  "saveTemplate": {
+    "title": "保存HTML模板",
+    "templateName": "模板名称",
+    "templateNamePlaceholder": "输入模板名称",
+    "titleRequired": "请输入模板名称",
+    "saveSuccess": "模板保存成功！",
+    "saveFailed": "保存模板失败"
+  },
+  "templatesList": {
+    "title": "已保存的模板",
+    "noTemplates": "暂无保存的模板",
+    "use": "使用",
+    "delete": "删除",
+    "copy": "复制",
+    "download": "下载",
+    "loadError": "加载模板列表失败",
+    "deleteSuccess": "删除模板成功",
+    "deleteError": "删除模板失败",
+    "copySuccess": "模板已成功复制到剪贴板",
+    "copyError": "复制模板失败",
+    "downloadSuccess": "模板下载成功",
+    "downloadError": "下载模板失败"
+  },
+  "indexedDB": {
+    "notInitialized": "数据库未初始化，请稍后再试"
   }
 } 

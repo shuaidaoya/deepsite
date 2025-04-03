@@ -11,12 +11,14 @@ function Preview({
   isResizing,
   isAiWorking,
   setView,
+  setHtml,
   ref,
 }: {
   html: string;
   isResizing: boolean;
   isAiWorking: boolean;
   setView: React.Dispatch<React.SetStateAction<"editor" | "preview">>;
+  setHtml?: (html: string) => void;
   ref: React.RefObject<HTMLDivElement | null>;
 }) {
   const { t } = useTranslation();
@@ -30,6 +32,14 @@ function Preview({
       setTimeout(() => {
         iframe.srcdoc = content;
       }, 10);
+    }
+  };
+
+  // 处理加载模板
+  const handleLoadTemplate = (templateHtml: string) => {
+    if (setHtml) {
+      setHtml(templateHtml);
+      toast.success(t('preview.templateLoaded'));
     }
   };
 
@@ -56,28 +66,21 @@ function Preview({
       {!isAiWorking && (
         <div className="flex items-center justify-between gap-3 absolute bottom-3 lg:bottom-5 right-3 left-3 lg:right-5 lg:left-auto">
         <div className="flex items-center gap-2">
-            <button
-              className="lg:hidden bg-gray-950 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
-              onClick={() => setView("editor")}
-            >
-              <FaLaptopCode />
-              {t("preview.backToEditor")}
-            </button>
-          <a
-            href="https://huggingface.co/spaces/victor/deepsite-gallery"
-            target="_blank"
-            className="bg-gray-200 text-gray-950 text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-200 hover:bg-gray-300 transition-all duration-100 cursor-pointer"
+          <button
+            className="lg:hidden bg-gray-950 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
+            onClick={() => setView("editor")}
           >
-            🖼️ <span>DeepSite Gallery</span>
-          </a>
-            <button
-              className="bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 lg:border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
-              onClick={handleRefreshIframe}
-            >
-              <TbReload />
-              {t("preview.refreshPreview")}
-            </button>
-          </div>
+            <FaLaptopCode />
+            {t("preview.backToEditor")}
+          </button>
+          <button
+            className="bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 lg:border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
+            onClick={handleRefreshIframe}
+          >
+            <TbReload />
+            {t("preview.refreshPreview")}
+          </button>
+        </div>
         <PreviewActions html={html} isDisabled={isAiWorking || isResizing} />
       </div>
       )}

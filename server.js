@@ -12,7 +12,6 @@ import {
 } from "@huggingface/hub";
 import bodyParser from "body-parser";
 
-import checkUser from "./middlewares/checkUser.js";
 import { PROVIDERS } from "./utils/providers.js";
 import { COLORS } from "./utils/colors.js";
 
@@ -21,17 +20,12 @@ dotenv.config();
 
 const app = express();
 
-const ipAddresses = new Map();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.APP_PORT || 3000;
-const REDIRECT_URI =
-  process.env.REDIRECT_URI || `http://localhost:${PORT}/auth/login`;
 const MODEL_ID = process.env.OPENAI_MODEL || "gpt-4o";
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
-const MAX_REQUESTS_PER_IP = 4;
 
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -41,61 +35,8 @@ const getPTag = (repoId) => {
   return `<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - <a href="https://enzostvs-deepsite.hf.space?remix=${repoId}" style="color: #fff;text-decoration: underline;" target="_blank" >🧬 Remix</a></p>`;
 };
 
-app.get("/api/login", (_req, res) => {
-  res.redirect(
-    302,
-    `https://huggingface.co/oauth/authorize?client_id=${process.env.OAUTH_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=openid%20profile%20write-repos%20manage-repos%20inference-api&prompt=consent&state=1234567890`
-  );
-});
-app.get("/auth/login", async (req, res) => {
-  const { code } = req.query;
-
-  if (!code) {
-    return res.redirect(302, "/");
-  }
-  const Authorization = `Basic ${Buffer.from(
-    `${process.env.OAUTH_CLIENT_ID}:${process.env.OAUTH_CLIENT_SECRET}`
-  ).toString("base64")}`;
-
-  const request_auth = await fetch("https://huggingface.co/oauth/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization,
-    },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code: code,
-      redirect_uri: REDIRECT_URI,
-    }),
-  });
-
-  const response = await request_auth.json();
-
-  if (!response.access_token) {
-    return res.redirect(302, "/");
-  }
-
-  res.cookie("hf_token", response.access_token, {
-    httpOnly: false,
-    secure: true,
-    sameSite: "none",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-  });
-
-  return res.redirect(302, "/");
-});
-app.get("/auth/logout", (req, res) => {
-  res.clearCookie("hf_token", {
-    httpOnly: false,
-    secure: true,
-    sameSite: "none",
-  });
-  return res.redirect(302, "/");
-});
-
-app.post("/api/deploy", checkUser, async (req, res) => {
-  const { html, title, path } = req.body;
+app.post("/api/deploy", async (req, res) => {
+  const { html, title } = req.body;
   if (!html || !title) {
     return res.status(400).send({
       ok: false,
@@ -103,71 +44,10 @@ app.post("/api/deploy", checkUser, async (req, res) => {
     });
   }
 
-  const { hf_token } = req.cookies;
-  try {
-    const repo = {
-      type: "space",
-      name: path ?? "",
-    };
-
-    let readme;
-    let newHtml = html;
-
-    if (!path || path === "") {
-      const { name: username } = await whoAmI({ accessToken: hf_token });
-      const newTitle = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .split("-")
-        .filter(Boolean)
-        .join("-")
-        .slice(0, 96);
-
-      const repoId = `${username}/${newTitle}`;
-      repo.name = repoId;
-
-      await createRepo({
-        repo,
-        accessToken: hf_token,
-      });
-      const colorFrom = COLORS[Math.floor(Math.random() * COLORS.length)];
-      const colorTo = COLORS[Math.floor(Math.random() * COLORS.length)];
-      readme = `---
-title: ${newTitle}
-emoji: 🐳
-colorFrom: ${colorFrom}
-colorTo: ${colorTo}
-sdk: static
-pinned: false
-tags:
-  - deepsite
----
-
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference`;
-    }
-
-    newHtml = html.replace(/<\/body>/, `${getPTag(repo.name)}</body>`);
-    const file = new Blob([newHtml], { type: "text/html" });
-    file.name = "index.html"; // Add name property to the Blob
-
-    const files = [file];
-    if (readme) {
-      const readmeFile = new Blob([readme], { type: "text/markdown" });
-      readmeFile.name = "README.md"; // Add name property to the Blob
-      files.push(readmeFile);
-    }
-    await uploadFiles({
-      repo,
-      files,
-      accessToken: hf_token,
-    });
-    return res.status(200).send({ ok: true, path: repo.name });
-  } catch (err) {
-    return res.status(500).send({
-      ok: false,
-      message: err.message,
-    });
-  }
+  return res.status(200).send({
+    ok: true,
+    message: "Deployment feature has been removed as it required Hugging Face login",
+  });
 });
 
 app.post("/api/ask-ai", async (req, res) => {
@@ -179,26 +59,7 @@ app.post("/api/ask-ai", async (req, res) => {
     });
   }
 
-  const { hf_token } = req.cookies;
-  const ip =
-    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-    req.headers["x-real-ip"] ||
-    req.socket.remoteAddress ||
-    req.ip ||
-    "0.0.0.0";
-
-  if (!hf_token) {
-    ipAddresses.set(ip, (ipAddresses.get(ip) || 0) + 1);
-    if (ipAddresses.get(ip) > MAX_REQUESTS_PER_IP) {
-      return res.status(429).send({
-        ok: false,
-        openLogin: true,
-        message: "Log In to continue using the service",
-      });
-    }
-  }
-
-  // Set up response headers for streaming
+  // 设置响应头
   res.setHeader("Content-Type", "text/plain");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");

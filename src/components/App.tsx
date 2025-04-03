@@ -17,6 +17,7 @@ import { defaultHTML } from "./../../utils/consts";
 import Tabs from "./tabs/tabs";
 import AskAI from "./ask-ai/ask-ai";
 import Preview from "./preview/preview";
+import DeployButton from "./deploy-button/deploy-button";
 
 function App() {
   const { t } = useTranslation();
@@ -149,7 +150,7 @@ function App() {
     window.removeEventListener("resize", resetLayout);
   });
 
-  // 自动保存 HTML 内容到本地存储
+  // 自动保存 HTML 内容到本地存储（后台静默保存，无需用户操作）
   useEffect(() => {
     // 只有当 HTML 内容变化且不是默认内容时才保存
     if (html !== defaultHTML) {
@@ -242,7 +243,9 @@ function App() {
           isAiWorking={isAiWorking}
           ref={preview}
           setView={setCurrentView}
+          setHtml={setHtml}
         />
+        <DeployButton />
       </main>
     </div>
   );
