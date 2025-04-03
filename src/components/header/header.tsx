@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { MdAdd } from "react-icons/md";
+import { FaGithub } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 import Logo from "@/assets/logo.svg";
@@ -39,6 +40,15 @@ function Header({
       </div>
       <div className="flex items-center gap-2">
         <LanguageSwitcher />
+         <a 
+          href="https://github.com/kiritoko1029/deepsite" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-gray-400 hover:text-white transition-colors"
+        >
+          <FaGithub className="text-2xl" />
+        </a>
+
         {children}
       </div>
     </header>
