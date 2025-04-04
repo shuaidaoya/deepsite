@@ -17,6 +17,7 @@ import { defaultHTML } from "../../utils/consts";
 import Tabs from "./tabs/tabs";
 import AskAI from "./ask-ai/ask-ai";
 import Preview from "./preview/preview";
+import Settings from "./settings/settings";
 
 function App() {
   const { t } = useTranslation();
@@ -32,14 +33,32 @@ function App() {
   const [html, setHtml] = useState((htmlStorage as string) ?? defaultHTML);
   const [isAiWorking, setisAiWorking] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("vanilla");
+  const [selectedUI, setSelectedUI] = useState<string | null>(null);
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
 
   const [currentView, setCurrentView] = useState<"editor" | "preview">(
     "editor"
   );
 
+  // 添加设置面板状态
+  const [openSettings, setOpenSettings] = useState(false);
+
   // 处理模板变更
-  const handleTemplateChange = (templateId: string) => {
-    setSelectedTemplateId(templateId);
+  const handleTemplateChange = (framework: string, ui: string | null, tools: string[]) => {
+    setSelectedTemplateId(framework);
+    setSelectedUI(ui);
+    setSelectedTools(tools);
+    localStorage.setItem("selected_template", framework);
+    
+    // 保存组件库和工具库选择到localStorage
+    if (ui) localStorage.setItem("selected_ui", ui);
+    else localStorage.removeItem("selected_ui");
+    
+    if (tools.length > 0) localStorage.setItem("selected_tools", JSON.stringify(tools));
+    else localStorage.removeItem("selected_tools");
+    
+    // 如果模板改变，重置当前页面
+    resetToTemplate(framework);
   };
 
   // 监听模板选择变化
@@ -49,22 +68,25 @@ function App() {
       setSelectedTemplateId(storedTemplateId);
     }
     
-    const templateChangeHandler = () => {
-      const templateId = localStorage.getItem("selected_template");
-      if (templateId && templateId !== selectedTemplateId) {
-        setSelectedTemplateId(templateId);
+    const storedUI = localStorage.getItem("selected_ui");
+    if (storedUI) {
+      setSelectedUI(storedUI);
+    }
+    
+    const storedTools = localStorage.getItem("selected_tools");
+    if (storedTools) {
+      try {
+        setSelectedTools(JSON.parse(storedTools));
+      } catch (e) {
+        console.error("Failed to parse stored tools:", e);
       }
-    };
-    
-    window.addEventListener("storage", templateChangeHandler);
-    
-    return () => {
-      window.removeEventListener("storage", templateChangeHandler);
-    };
+    }
   }, []);
 
   // 重置HTML为指定模板的HTML
   const resetToTemplate = async (templateId: string) => {
+    if (!templateId) return;
+    
     if (isAiWorking) {
       toast.warn(t("askAI.working"));
       return;
@@ -297,6 +319,8 @@ function App() {
             setisAiWorking={setisAiWorking}
             setView={setCurrentView}
             selectedTemplateId={selectedTemplateId}
+            selectedUI={selectedUI}
+            selectedTools={selectedTools}
             onTemplateChange={handleTemplateChange}
             onScrollToBottom={() => {
               editorRef.current?.revealLine(
@@ -318,6 +342,14 @@ function App() {
           setHtml={setHtml}
         />
       </main>
+      <Settings
+        open={openSettings}
+        onClose={setOpenSettings}
+        selectedTemplate={selectedTemplateId}
+        selectedUI={selectedUI}
+        selectedTools={selectedTools}
+        onTemplateChange={handleTemplateChange}
+      />
     </div>
   );
 }

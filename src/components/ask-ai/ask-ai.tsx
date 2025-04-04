@@ -18,6 +18,8 @@ function AskAI({
   setisAiWorking,
   setView,
   selectedTemplateId,
+  selectedUI,
+  selectedTools,
   onTemplateChange
 }: {
   html: string;
@@ -27,9 +29,11 @@ function AskAI({
   setView: React.Dispatch<React.SetStateAction<"editor" | "preview">>;
   setisAiWorking: React.Dispatch<React.SetStateAction<boolean>>;
   selectedTemplateId: string;
-  onTemplateChange: (templateId: string) => void;
+  selectedUI: string | null;
+  selectedTools: string[];
+  onTemplateChange: (templateId: string, ui: string | null, tools: string[]) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [prompt, setPrompt] = useState("");
   const [hasAsked, setHasAsked] = useState(false);
   const [previousPrompt, setPreviousPrompt] = useState("");
@@ -38,12 +42,6 @@ function AskAI({
   const audio = new Audio(SuccessSound);
   audio.volume = 0.5;
 
-  // 本地模板变更处理函数
-  const handleTemplateChange = (templateId: string) => {
-    onTemplateChange(templateId);
-    localStorage.setItem("selected_template", templateId);
-  };
-
   const callAi = async () => {
     if (isAiWorking || !prompt.trim()) return;
     setisAiWorking(true);
@@ -51,6 +49,9 @@ function AskAI({
     let contentResponse = "";
     let lastRenderTime = 0;
     try {
+      // 获取当前用户语言
+      const currentLanguage = i18n.language.startsWith('zh') ? 'zh' : 'en';
+      
       const request = await fetch("/api/ask-ai", {
         method: "POST",
         body: JSON.stringify({
@@ -58,6 +59,9 @@ function AskAI({
           ...(html === defaultHTML ? {} : { html }),
           ...(previousPrompt ? { previousPrompt } : {}),
           templateId: selectedTemplateId, // 使用从props传入的模板ID
+          ui: selectedUI, // 添加组件库选择
+          tools: selectedTools, // 添加工具库选择
+          language: currentLanguage, // 添加当前语言
         }),
         headers: {
           "Content-Type": "application/json",
@@ -209,7 +213,9 @@ function AskAI({
             open={openSettings}
             onClose={setOpenSettings}
             selectedTemplate={selectedTemplateId}
-            onTemplateChange={handleTemplateChange}
+            selectedUI={selectedUI}
+            selectedTools={selectedTools}
+            onTemplateChange={onTemplateChange}
           />
           <button
             disabled={isAiWorking}

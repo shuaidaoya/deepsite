@@ -14,7 +14,7 @@ import bodyParser from "body-parser";
 
 import { PROVIDERS } from "./utils/providers.js";
 import { COLORS } from "./utils/colors.js";
-import { TEMPLATES } from "./utils/templates.js";
+import { TEMPLATES, CDN_URLS } from "./utils/templates.js";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -61,11 +61,17 @@ app.get("/api/templates/:id", (req, res) => {
     });
   }
   
+  // 模板中现在直接引用CDN_URLS，不需要替换变量
+  const html = TEMPLATES[id].html;
+  
   return res.status(200).send({
     ok: true,
     template: {
       id,
-      ...TEMPLATES[id]
+      name: TEMPLATES[id].name,
+      description: TEMPLATES[id].description,
+      systemPrompt: TEMPLATES[id].systemPrompt,
+      html: html
     },
   });
 });
@@ -86,7 +92,7 @@ app.post("/api/deploy", async (req, res) => {
 });
 
 app.post("/api/ask-ai", async (req, res) => {
-  const { prompt, html, previousPrompt, templateId } = req.body;
+  const { prompt, html, previousPrompt, templateId, language, ui, tools } = req.body;
   if (!prompt) {
     return res.status(400).send({
       ok: false,
@@ -124,10 +130,60 @@ app.post("/api/ask-ai", async (req, res) => {
 
     console.log(`Using OpenAI API at: ${OPENAI_BASE_URL}`);
     
-    // 获取正确的系统提示词
-    const systemPrompt = templateId && TEMPLATES[templateId] 
+    // 获取基础系统提示词
+    let systemPrompt = templateId && TEMPLATES[templateId] 
       ? TEMPLATES[templateId].systemPrompt 
       : TEMPLATES.vanilla.systemPrompt;
+    
+    // 如果有选择组件库，仅当选择Vue3框架时才添加相关提示
+    if (ui && ui !== templateId && templateId === 'vue3') {
+      const uiTemplate = TEMPLATES[ui];
+      if (uiTemplate) {
+        // 从组件库提示词中提取关键部分并添加到系统提示中
+        systemPrompt += ` Also, use ${uiTemplate.name} component library with CDN: `;
+        
+        if (ui === 'elementPlus') {
+          systemPrompt += `CSS: ${CDN_URLS.ELEMENT_PLUS_CSS}, JS: ${CDN_URLS.ELEMENT_PLUS_JS}.`;
+        } else if (ui === 'naiveUI') {
+          systemPrompt += `${CDN_URLS.NAIVE_UI}.`;
+        }
+      }
+    }
+    
+    // 如果有选择工具库，添加相关提示
+    if (tools && tools.length > 0) {
+      systemPrompt += " Include the following additional libraries: ";
+      
+      tools.forEach((tool, index) => {
+        if (tool === 'tailwindcss') {
+          systemPrompt += `Tailwind CSS (use <script src="${CDN_URLS.TAILWIND}"></script>)`;
+        } else if (tool === 'vueuse') {
+          systemPrompt += `VueUse (use <script src="${CDN_URLS.VUEUSE_SHARED}"></script> and <script src="${CDN_URLS.VUEUSE_CORE}"></script>)`;
+        } else if (tool === 'dayjs') {
+          systemPrompt += `Day.js (use <script src="${CDN_URLS.DAYJS}"></script>)`;
+        }
+        
+        if (index < tools.length - 1) {
+          systemPrompt += ", ";
+        }
+      });
+      
+      systemPrompt += ".";
+    }
+    
+    // 根据语言设置添加注释语言提示
+    if (language === 'zh') {
+      systemPrompt += " 请使用中文编写所有的注释。";
+    } else if (language === 'en') {
+      systemPrompt += " Please write all comments in English.";
+    }
+    
+    // 日志输出选择的配置
+    console.log("Template configuration:");
+    console.log(`- Framework: ${templateId}`);
+    console.log(`- UI Library: ${ui || 'None'}`);
+    console.log(`- Tools: ${tools ? tools.join(', ') : 'None'}`);
+    console.log(`- Language: ${language || 'default'}`);
     
     const messages = [
       {
