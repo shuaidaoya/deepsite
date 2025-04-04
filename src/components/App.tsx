@@ -18,6 +18,7 @@ import Tabs from "./tabs/tabs";
 import AskAI from "./ask-ai/ask-ai";
 import Preview from "./preview/preview";
 import Settings from "./settings/settings";
+import { ModelParameters } from "./settings/settings";
 
 function App() {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("vanilla");
   const [selectedUI, setSelectedUI] = useState<string | null>(null);
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [modelParams, setModelParams] = useState<ModelParameters | undefined>();
 
   const [currentView, setCurrentView] = useState<"editor" | "preview">(
     "editor"
@@ -45,23 +47,40 @@ function App() {
 
   // 处理模板变更
   const handleTemplateChange = (framework: string, ui: string | null, tools: string[]) => {
+    // 保存用户选择
     setSelectedTemplateId(framework);
     setSelectedUI(ui);
     setSelectedTools(tools);
-    localStorage.setItem("selected_template", framework);
     
     // 保存组件库和工具库选择到localStorage
+    localStorage.setItem("selected_template", framework);
     if (ui) localStorage.setItem("selected_ui", ui);
     else localStorage.removeItem("selected_ui");
     
     if (tools.length > 0) localStorage.setItem("selected_tools", JSON.stringify(tools));
     else localStorage.removeItem("selected_tools");
     
-    // 如果模板改变，重置当前页面
-    resetToTemplate(framework);
+    // 记录上次使用的模板ID
+    localStorage.setItem("last_template_id", framework);
+    
+    // 确认是否要加载新模板
+    if (html !== defaultHTML) {
+      if (window.confirm(`是否要将当前HTML替换为${framework}模板的HTML？`)) {
+        resetToTemplate(framework);
+      }
+    } else {
+      // 如果是默认HTML，直接加载模板
+      resetToTemplate(framework);
+    }
   };
 
-  // 监听模板选择变化
+  // 处理模型参数变更
+  const handleModelParamsChange = (params: ModelParameters) => {
+    setModelParams(params);
+    localStorage.setItem("model_params", JSON.stringify(params));
+  };
+
+  // 监听模板选择变化 - 仅加载已保存的选择，不加载模板
   useEffect(() => {
     const storedTemplateId = localStorage.getItem("selected_template");
     if (storedTemplateId) {
@@ -81,10 +100,20 @@ function App() {
         console.error("Failed to parse stored tools:", e);
       }
     }
+    
+    // 加载存储的模型参数
+    const storedModelParams = localStorage.getItem("model_params");
+    if (storedModelParams) {
+      try {
+        setModelParams(JSON.parse(storedModelParams));
+      } catch (e) {
+        console.error("Failed to parse stored model params:", e);
+      }
+    }
   }, []);
 
   // 重置HTML为指定模板的HTML
-  const resetToTemplate = async (templateId: string) => {
+  const resetToTemplate = async (templateId: string, shouldShowToast = true) => {
     if (!templateId) return;
     
     if (isAiWorking) {
@@ -102,7 +131,9 @@ function App() {
           editorRef.current?.revealLine(
             editorRef.current?.getModel()?.getLineCount() ?? 0
           );
-          toast.success(`已加载 ${data.template.name} 模板`);
+          if (shouldShowToast) {
+            toast.success(`已加载 ${data.template.name} 模板`);
+          }
         }
       } else {
         toast.error("无法加载模板");
@@ -112,26 +143,6 @@ function App() {
       toast.error("加载模板时出错");
     }
   };
-
-  // 当选择的模板改变时，询问用户是否要切换到新模板的HTML
-  useEffect(() => {
-    const promptTemplateChange = async () => {
-      // 如果是首次加载或者内容是默认HTML，直接切换模板
-      if (html === defaultHTML) {
-        await resetToTemplate(selectedTemplateId);
-      } 
-      // 已经有修改的内容时，询问用户是否要替换
-      else if (selectedTemplateId !== localStorage.getItem("last_template_id")) {
-        if (window.confirm(`是否要将当前HTML替换为${selectedTemplateId}模板的HTML？`)) {
-          await resetToTemplate(selectedTemplateId);
-        }
-      }
-      // 记录上次使用的模板ID
-      localStorage.setItem("last_template_id", selectedTemplateId);
-    };
-    
-    promptTemplateChange();
-  }, [selectedTemplateId]);
 
   const fetchRemix = async () => {
     if (!remix) return;
@@ -225,7 +236,17 @@ function App() {
     if (htmlStorage) {
       removeHtmlStorage();
       toast.warn(t("toast.contentRestored"));
+    } else {
+      // 仅当没有已保存HTML内容，且是首次加载时，静默加载默认模板
+      const isFirstLoad = !localStorage.getItem("app_initialized");
+      if (isFirstLoad && html === defaultHTML) {
+        resetToTemplate(selectedTemplateId, false); // 静默加载
+      }
     }
+    
+    // 设置应用初始化标记
+    localStorage.setItem("app_initialized", "true");
+    localStorage.setItem("last_template_id", selectedTemplateId);
 
     // Set initial layout based on window size
     resetLayout();
@@ -269,6 +290,16 @@ function App() {
           }
         }}
       >
+        <Settings
+          open={openSettings}
+          onClose={setOpenSettings}
+          selectedTemplate={selectedTemplateId}
+          selectedUI={selectedUI}
+          selectedTools={selectedTools}
+          modelParams={modelParams}
+          onTemplateChange={handleTemplateChange}
+          onModelParamsChange={handleModelParamsChange}
+        />
       </Header>
       <main className="max-lg:flex-col flex w-full">
         <div
@@ -327,6 +358,8 @@ function App() {
                 editorRef.current?.getModel()?.getLineCount() ?? 0
               );
             }}
+            modelParams={modelParams}
+            onModelParamsChange={handleModelParamsChange}
           />
         </div>
         <div
@@ -342,14 +375,6 @@ function App() {
           setHtml={setHtml}
         />
       </main>
-      <Settings
-        open={openSettings}
-        onClose={setOpenSettings}
-        selectedTemplate={selectedTemplateId}
-        selectedUI={selectedUI}
-        selectedTools={selectedTools}
-        onTemplateChange={handleTemplateChange}
-      />
     </div>
   );
 }

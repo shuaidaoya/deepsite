@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { MdAdd } from "react-icons/md";
+import { MdRefresh } from "react-icons/md";
 import { FaGithub } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
@@ -27,20 +27,25 @@ function Header({
           {t('app.title')}
         </h1>
         <p className="text-gray-700 max-md:hidden">|</p>
-        <button
-          className="max-md:hidden relative cursor-pointer flex-none flex items-center justify-center rounded-md text-xs font-semibold leading-4 py-1.5 px-3 hover:bg-gray-700 text-gray-100 shadow-sm dark:shadow-highlight/20 bg-gray-800"
-          onClick={onReset}
-        >
-          <MdAdd className="mr-1 text-base" />
-          {t('header.new')}
-        </button>
         <p className="text-gray-500 text-sm max-md:hidden">
           {t('app.subtitle')}
         </p>
       </div>
       <div className="flex items-center gap-2">
+        <button
+          className="relative bg-red-500 hover:bg-red-400 overflow-hidden cursor-pointer flex-none flex items-center justify-center rounded-md text-xs lg:text-sm font-semibold py-1.5 px-3 text-white shadow-sm dark:shadow-highlight/20 mx-2 transition-all duration-300"
+          onClick={onReset}
+          title={t('header.resetTooltip')}
+        >
+          <MdRefresh className="mr-1 text-lg" />
+          {t('header.new')}
+        </button>
+        
         <LanguageSwitcher />
-         <a 
+         
+        {children}
+        
+        <a 
           href="https://github.com/kiritoko1029/deepsite" 
           target="_blank" 
           rel="noopener noreferrer" 
@@ -48,8 +53,6 @@ function Header({
         >
           <FaGithub className="text-2xl" />
         </a>
-
-        {children}
       </div>
     </header>
   );

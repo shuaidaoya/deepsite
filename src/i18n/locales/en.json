@@ -1,16 +1,40 @@
 {
   "app": {
     "title": "DeepSite",
-    "subtitle": "Imagine & share in one click"
+    "subtitle": "Imagine and Share with One Click"
   },
   "header": {
-    "new": "New"
+    "new": "Reset",
+    "resetTooltip": "Reset Editor"
   },
   "settings": {
-    "title": "AI Settings",
+    "title": "Configuration",
     "aiInfo": "AI Information",
-    "maxTokenLimit": "Max Token Limit",
-    "configHint": "You can configure the OpenAI model and API URL through environment variables. Please refer to the .env.example file in the project."
+    "maxTokenLimit": "Maximum Token Limit",
+    "configHint": "OpenAI model and API URL can be configured through environment variables. See the .env.example file in the project.",
+    "templateTab": "Templates",
+    "modelTab": "Model Parameters",
+    "applySettings": "Apply Settings",
+    "modelParams": {
+      "title": "Model Parameters",
+      "maxTokens": "Maximum Tokens (max_tokens)",
+      "maxTokensDesc": "Controls the maximum number of tokens to generate. Larger values allow for longer responses but may require more processing time.",
+      "temperature": "Creativity Level (temperature)",
+      "temperatureDesc": "Controls the randomness of the output. Lower values produce more deterministic content, higher values produce more creative content.",
+      "defaultValues": "Default values: max_tokens = 64000, temperature = 0. These settings can also be configured as defaults in environment variables.",
+      "precise": "Precise (0)",
+      "balanced": "Balanced (1)",
+      "creative": "Creative (2)"
+    },
+    "templates": {
+      "framework": "Select Framework",
+      "ui": "Select UI Components",
+      "tools": "Select Tools",
+      "toolsMultiSelect": "Tools are optional and multiple can be selected",
+      "uiOptional": "UI component library is optional, you can use default settings",
+      "requireVue3": "Please select Vue 3 framework first to use component libraries",
+      "requireFramework": "Please select a framework first to choose tools"
+    }
   },
   "tabs": {
     "editor": "Editor",
@@ -23,14 +47,16 @@
     "deploy": "Deploy",
     "login": "Login",
     "deploying": "Deploying",
-    "success": "Deployed successfully!",
-    "error": "Deployment failed",
+    "success": "Deployed Successfully!",
+    "error": "Deployment Failed",
     "fixErrors": "Please fix errors before deploying"
   },
   "askAI": {
     "placeholder": "Ask AI to update your HTML...",
-    "working": "Please wait while the AI is working.",
-    "clear": "Clear"
+    "working": "Please wait while AI is working.",
+    "clear": "Clear",
+    "optimizePromptTooltip": "Optimize your prompt",
+    "promptOptimized": "Prompt optimized successfully!"
   },
   "toast": {
     "contentRestored": "Previous HTML content restored from local storage.",
@@ -42,8 +68,8 @@
     "zh": "中文"
   },
   "preview": {
-    "backToEditor": "Back to editor",
-    "refreshPreview": "Refresh preview",
+    "backToEditor": "Back to Editor",
+    "refreshPreview": "Refresh",
     "copy": "Copy",
     "copyTooltip": "Copy HTML",
     "download": "Download",
@@ -55,9 +81,9 @@
     "downloadSuccess": "HTML downloaded successfully!",
     "downloadFailed": "Failed to download HTML.",
     "saveToDB": "Save Template",
-    "saveToDBTooltip": "Save as template",
-    "templatesList": "Templates",
-    "templatesListTooltip": "View saved templates",
+    "saveToDBTooltip": "Save as Template",
+    "templatesList": "Templates List",
+    "templatesListTooltip": "View Saved Templates",
     "templateLoaded": "Template loaded successfully!"
   },
   "common": {
@@ -69,7 +95,7 @@
     "title": "Save HTML Template",
     "templateName": "Template Name",
     "templateNamePlaceholder": "Enter template name",
-    "titleRequired": "Template name is required",
+    "titleRequired": "Please enter a template name",
     "saveSuccess": "Template saved successfully!",
     "saveFailed": "Failed to save template"
   },
@@ -80,7 +106,7 @@
     "delete": "Delete",
     "copy": "Copy",
     "download": "Download",
-    "loadError": "Failed to load templates",
+    "loadError": "Failed to load templates list",
     "deleteSuccess": "Template deleted successfully",
     "deleteError": "Failed to delete template",
     "copySuccess": "Template copied to clipboard successfully",
@@ -90,5 +116,8 @@
   },
   "indexedDB": {
     "notInitialized": "Database not initialized, please try again later"
+  },
+  "errors": {
+    "optimizePromptFailed": "Failed to optimize prompt"
   }
 } 

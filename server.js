@@ -27,6 +27,8 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.APP_PORT || 3000;
 const MODEL_ID = process.env.OPENAI_MODEL || "gpt-4o";
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
+const DEFAULT_MAX_TOKENS = process.env.DEFAULT_MAX_TOKENS || 64000;
+const DEFAULT_TEMPERATURE = process.env.DEFAULT_TEMPERATURE || 0;
 
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -76,6 +78,93 @@ app.get("/api/templates/:id", (req, res) => {
   });
 });
 
+// 优化提示词的接口
+app.post("/api/optimize-prompt", async (req, res) => {
+  const { prompt, language } = req.body;
+  if (!prompt) {
+    return res.status(400).send({
+      ok: false,
+      message: "Missing prompt field",
+    });
+  }
+
+  try {
+    // OpenAI API 调用
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).send({
+        ok: false,
+        message: "OpenAI API key is not configured.",
+      });
+    }
+
+    // 根据语言设置系统提示词
+    const systemPrompt = language === 'zh'
+      ? "你是一个专业的提示词优化助手。你的任务是改进用户的提示词，使其更加清晰、具体和有效。保持用户的原始意图，但使提示词更加结构化，更容易被AI理解。只输出优化后的提示词文本，不要使用Markdown语法，不要添加任何解释、评论或额外标记。必要时可以使用换行符或空格来格式化文本，使其更易读。"
+      : "You are a professional prompt optimization assistant. Your task is to improve the user's prompt to make it clearer, more specific, and more effective. Maintain the user's original intent but make the prompt more structured and easier for AI to understand. Output only the plain text of the optimized prompt without any Markdown syntax, explanations, comments, or additional markers. You may use <br> and spaces to format the text when necessary to improve readability.";
+
+    const messages = [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ];
+
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: MODEL_ID,
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    };
+
+    console.log("Sending prompt optimization request to OpenAI API");
+    
+    const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, requestOptions);
+
+    if (!response.ok) {
+      console.error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      
+      try {
+        const error = await response.json();
+        return res.status(response.status).send({
+          ok: false,
+          message: error?.message || "Error calling OpenAI API",
+        });
+      } catch (parseError) {
+        return res.status(response.status).send({
+          ok: false,
+          message: `OpenAI API error: ${response.status} ${response.statusText}`,
+        });
+      }
+    }
+
+    const data = await response.json();
+    const optimizedPrompt = data.choices?.[0]?.message?.content?.trim();
+
+    return res.status(200).send({
+      ok: true,
+      optimizedPrompt,
+    });
+  } catch (error) {
+    console.error("Error optimizing prompt:", error);
+    return res.status(500).send({
+      ok: false,
+      message: error.message || "An error occurred while optimizing the prompt",
+    });
+  }
+});
+
 app.post("/api/deploy", async (req, res) => {
   const { html, title } = req.body;
   if (!html || !title) {
@@ -92,7 +181,7 @@ app.post("/api/deploy", async (req, res) => {
 });
 
 app.post("/api/ask-ai", async (req, res) => {
-  const { prompt, html, previousPrompt, templateId, language, ui, tools } = req.body;
+  const { prompt, html, previousPrompt, templateId, language, ui, tools, max_tokens, temperature } = req.body;
   if (!prompt) {
     return res.status(400).send({
       ok: false,
@@ -105,18 +194,7 @@ app.post("/api/ask-ai", async (req, res) => {
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
-  let TOKENS_USED = prompt?.length;
-  if (previousPrompt) TOKENS_USED += previousPrompt.length;
-  if (html) TOKENS_USED += html.length;
-
   const selectedProvider = PROVIDERS["openai"];
-
-  if (TOKENS_USED >= selectedProvider.max_tokens) {
-    return res.status(400).send({
-      ok: false,
-      message: `Context is too long. ${selectedProvider.name} allows ${selectedProvider.max_tokens} max tokens.`,
-    });
-  }
 
   try {
     // OpenAI API 调用
@@ -143,7 +221,7 @@ app.post("/api/ask-ai", async (req, res) => {
         systemPrompt += ` Also, use ${uiTemplate.name} component library with CDN: `;
         
         if (ui === 'elementPlus') {
-          systemPrompt += `CSS: ${CDN_URLS.ELEMENT_PLUS_CSS}, JS: ${CDN_URLS.ELEMENT_PLUS_JS}.`;
+          systemPrompt += `CSS: ${CDN_URLS.ELEMENT_PLUS_CSS}, JS: ${CDN_URLS.ELEMENT_PLUS_JS}, Icons: ${CDN_URLS.ELEMENT_PLUS_ICONS}.`;
         } else if (ui === 'naiveUI') {
           systemPrompt += `${CDN_URLS.NAIVE_UI}.`;
         }
@@ -161,6 +239,8 @@ app.post("/api/ask-ai", async (req, res) => {
           systemPrompt += `VueUse (use <script src="${CDN_URLS.VUEUSE_SHARED}"></script> and <script src="${CDN_URLS.VUEUSE_CORE}"></script>)`;
         } else if (tool === 'dayjs') {
           systemPrompt += `Day.js (use <script src="${CDN_URLS.DAYJS}"></script>)`;
+        } else if (tool === 'element-plus-icons') {
+          systemPrompt += `Element Plus Icons (use <script src="${CDN_URLS.ELEMENT_PLUS_ICONS}"></script>)`;
         }
         
         if (index < tools.length - 1) {
@@ -168,7 +248,7 @@ app.post("/api/ask-ai", async (req, res) => {
         }
       });
       
-      systemPrompt += ".";
+      systemPrompt += ". Make sure to use the correct syntax for all the frameworks and libraries.";
     }
     
     // 根据语言设置添加注释语言提示
@@ -211,9 +291,6 @@ app.post("/api/ask-ai", async (req, res) => {
       content: prompt,
     });
 
-    const actualMaxTokens = Math.min(selectedProvider.max_tokens, 16000);
-    console.log(`Using max_tokens: ${actualMaxTokens}`);
-    
     const requestOptions = {
       method: "POST",
       headers: {
@@ -224,13 +301,13 @@ app.post("/api/ask-ai", async (req, res) => {
         model: MODEL_ID,
         messages,
         stream: true,
-        // 确保 max_tokens 不超过 API 的限制
-        max_tokens: actualMaxTokens
+        max_tokens: max_tokens || parseInt(DEFAULT_MAX_TOKENS),
+        temperature: temperature !== undefined ? parseFloat(temperature) : parseFloat(DEFAULT_TEMPERATURE)
       })
     };
 
     console.log(`Sending request to OpenAI API with model: ${MODEL_ID}`);
-    // 打印完整请求配置（隐藏敏感信息）
+    console.log(`Using max_tokens: ${max_tokens || DEFAULT_MAX_TOKENS}, temperature: ${temperature !== undefined ? temperature : DEFAULT_TEMPERATURE}`);
     console.log("Request URL:", `${OPENAI_BASE_URL}/chat/completions`);
     console.log("Request headers:", {
       ...requestOptions.headers,
@@ -253,7 +330,7 @@ app.post("/api/ask-ai", async (req, res) => {
           console.error("OpenAI API error details:", error);
           return res.status(response.status).send({
             ok: false,
-            message: error.error?.message || "Error calling OpenAI API",
+            message: error?.message || "Error calling OpenAI API",
           });
         } else {
           // 如果不是 JSON，直接读取文本

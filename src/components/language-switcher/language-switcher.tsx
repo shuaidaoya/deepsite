@@ -20,24 +20,31 @@ function LanguageSwitcher() {
     document.title = t('app.title');
   };
 
-  // 添加闪烁效果，吸引用户注意
+  // 检查是否是首次访问，仅在首次访问时添加闪烁效果
   const [highlight, setHighlight] = useState(false);
   
   useEffect(() => {
-    // 在组件挂载时添加闪烁动画
-    const timer = setInterval(() => {
-      setHighlight(prev => !prev);
-    }, 1000);
+    // 检查本地存储，判断是否首次访问
+    const hasVisitedBefore = localStorage.getItem('hasVisitedBefore');
     
-    // 5秒后停止闪烁
-    setTimeout(() => {
-      clearInterval(timer);
-      setHighlight(false);
-    }, 5000);
-    
-    return () => {
-      clearInterval(timer);
-    };
+    // 如果是首次访问，添加闪烁效果并记录到本地存储
+    if (!hasVisitedBefore) {
+      const timer = setInterval(() => {
+        setHighlight(prev => !prev);
+      }, 1000);
+      
+      // 5秒后停止闪烁
+      setTimeout(() => {
+        clearInterval(timer);
+        setHighlight(false);
+        // 记录用户已访问
+        localStorage.setItem('hasVisitedBefore', 'true');
+      }, 5000);
+      
+      return () => {
+        clearInterval(timer);
+      };
+    }
   }, []);
 
   return (
@@ -52,7 +59,7 @@ function LanguageSwitcher() {
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <MdLanguage className="mr-1 text-base" />
+        <MdLanguage className="mr-1 text-lg" />
         {isChinese ? '中文' : 'EN'}
       </button>
       

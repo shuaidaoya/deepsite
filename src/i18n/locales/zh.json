@@ -4,13 +4,37 @@
     "subtitle": "一键构想与分享"
   },
   "header": {
-    "new": "新建"
+    "new": "重置",
+    "resetTooltip": "重置编辑器"
   },
   "settings": {
-    "title": "AI 设置",
+    "title": "配置",
     "aiInfo": "AI 信息",
     "maxTokenLimit": "最大 Token 限制",
-    "configHint": "可通过环境变量配置 OpenAI 的模型和 API 地址。请参考项目的 .env.example 文件。"
+    "configHint": "可通过环境变量配置 OpenAI 的模型和 API 地址。请参考项目的 .env.example 文件。",
+    "templateTab": "模板选择",
+    "modelTab": "模型参数",
+    "applySettings": "应用设置",
+    "modelParams": {
+      "title": "模型参数配置",
+      "maxTokens": "最大生成长度 (max_tokens)",
+      "maxTokensDesc": "控制模型生成的最大标记数。较大的值可以生成更长的回复，但可能需要更长的处理时间。",
+      "temperature": "创造性程度 (temperature)",
+      "temperatureDesc": "控制输出的随机性。较低的值生成更确定性的内容，较高的值生成更有创意的内容。",
+      "defaultValues": "默认值：max_tokens = 64000，temperature = 0。这些设置也可以在环境变量中配置为默认值。",
+      "precise": "精确 (0)",
+      "balanced": "平衡 (1)",
+      "creative": "创意 (2)"
+    },
+    "templates": {
+      "framework": "选择框架",
+      "ui": "选择组件库",
+      "tools": "选择工具库",
+      "toolsMultiSelect": "工具库为可选项，可以多选",
+      "uiOptional": "组件库为可选项，可以不选择使用默认设置",
+      "requireVue3": "请先选择Vue 3框架才能使用组件库",
+      "requireFramework": "请先选择框架才能选择工具库"
+    }
   },
   "tabs": {
     "editor": "编辑器",
@@ -30,7 +54,9 @@
   "askAI": {
     "placeholder": "请 AI 更新您的 HTML...",
     "working": "请等待 AI 完成工作。",
-    "clear": "清除"
+    "clear": "清除",
+    "optimizePromptTooltip": "优化您的提示词",
+    "promptOptimized": "提示词优化成功！"
   },
   "toast": {
     "contentRestored": "从本地存储恢复了之前的 HTML 内容。",
@@ -90,5 +116,8 @@
   },
   "indexedDB": {
     "notInitialized": "数据库未初始化，请稍后再试"
+  },
+  "errors": {
+    "optimizePromptFailed": "优化提示词失败"
   }
 } 

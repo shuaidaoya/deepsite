@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { TbReload } from "react-icons/tb";
 import { toast } from "react-toastify";
 import { FaLaptopCode } from "react-icons/fa6";
@@ -23,6 +23,28 @@ function Preview({
 }) {
   const { t } = useTranslation();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [throttledHtml, setThrottledHtml] = useState(html);
+  const lastUpdateTimeRef = useRef<number>(Date.now());
+  
+  // 防止过于频繁刷新iframe，特别是在AI生成过程中
+  useEffect(() => {
+    // 如果当前正在生成AI内容，使用更长的节流时间，减少CDN请求频率
+    const throttleTime = isAiWorking ? 2000 : 1000;
+    
+    const now = Date.now();
+    if (now - lastUpdateTimeRef.current >= throttleTime) {
+      setThrottledHtml(html);
+      lastUpdateTimeRef.current = now;
+    } else {
+      // 如果距离上次更新时间不够，设置一个定时器在适当时间后更新
+      const timerId = setTimeout(() => {
+        setThrottledHtml(html);
+        lastUpdateTimeRef.current = Date.now();
+      }, throttleTime - (now - lastUpdateTimeRef.current));
+      
+      return () => clearTimeout(timerId);
+    }
+  }, [html, isAiWorking]);
 
   const handleRefreshIframe = () => {
     if (iframeRef.current) {
@@ -61,7 +83,7 @@ function Preview({
         className={classNames("w-full h-full select-none", {
           "pointer-events-none": isResizing || isAiWorking,
         })}
-        srcDoc={html}
+        srcDoc={throttledHtml}
       />
       {!isAiWorking && (
         <div className="flex items-center justify-between gap-3 absolute bottom-3 lg:bottom-5 right-3 left-3 lg:right-5 lg:left-auto">

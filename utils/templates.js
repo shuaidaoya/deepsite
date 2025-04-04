@@ -7,6 +7,7 @@ const CDN_URLS = {
   // 组件库
   ELEMENT_PLUS_CSS: "https://unpkg.com/element-plus@2.9.7/dist/index.css",
   ELEMENT_PLUS_JS: "https://unpkg.com/element-plus@2.9.7/dist/index.full.js",
+  ELEMENT_PLUS_ICONS: "https://cdn.jsdelivr.net/npm/@element-plus/icons-vue",
   NAIVE_UI: "https://unpkg.com/naive-ui@2.41.0/dist/index.prod.js",
   
   // 工具库
@@ -153,114 +154,142 @@ const TEMPLATES = {
     elementPlus: {
       name: "Vue 3 + Element Plus",
       description: "Vue 3 框架配合 Element Plus 组件库",
-      systemPrompt: `CREATE A VUE 3 APPLICATION WITH ELEMENT PLUS UI LIBRARY. Use Vue 3 CDN (${CDN_URLS.VUE}) and Element Plus CDN (CSS: ${CDN_URLS.ELEMENT_PLUS_CSS}, JS: ${CDN_URLS.ELEMENT_PLUS_JS}). Structure your code with Vue 3 components, reactivity, Element Plus components, and proper Vue syntax. Please write clear and helpful comments in your code to explain the structure and functionality. Follow Element Plus documentation for component usage. Try to elaborate as much as you can, to create something unique and visually appealing. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE`,
+      systemPrompt: `CREATE A VUE 3 APPLICATION WITH ELEMENT PLUS UI LIBRARY. Use Vue 3 CDN (${CDN_URLS.VUE}), Element Plus CDN (CSS: ${CDN_URLS.ELEMENT_PLUS_CSS}, JS: ${CDN_URLS.ELEMENT_PLUS_JS}), and Element Plus Icons (${CDN_URLS.ELEMENT_PLUS_ICONS}). 
+
+When using Element Plus Icons, make sure to:
+1. Import them from the global ElementPlusIconsVue object: const { Icon1, Icon2 } = ElementPlusIconsVue;
+2. Register them in the components option: components: { Icon1, Icon2 }
+3. Use them in templates: <el-icon><Icon1 /></el-icon>
+
+Structure your code with Vue 3 components, reactivity, Element Plus components, and proper Vue syntax. Please write clear and helpful comments in your code to explain the structure and functionality. Follow Element Plus documentation for component usage. Try to elaborate as much as you can, to create something unique and visually appealing. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE`,
       html: `<!DOCTYPE html>
-  <html>
-    <head>
-      <title>Element Plus 演示</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta charset="utf-8">
-      <link rel="stylesheet" href="${CDN_URLS.ELEMENT_PLUS_CSS}">
-      <script src="${CDN_URLS.VUE}"></script>
-      <script src="${CDN_URLS.ELEMENT_PLUS_JS}"></script>
-      <style>
-        [v-cloak] { display: none; }
-        body { background-color: #f5f7fa; }
-      </style>
-    </head>
-    <body>
-      <div id="app" v-cloak>
-        <el-config-provider>
-          <div class="container" style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
-            <!-- Element Plus 标题和组件展示 -->
-            <el-card shadow="hover" class="mb-4">
-              <template #header>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-weight: bold;">Element Plus 组件库</span>
-                  <el-tag type="success">v2.9.7</el-tag>
-                </div>
-              </template>
-              
-              <p style="margin-bottom: 20px;">本模板演示了Element Plus常用组件，您可以基于此模板创建优雅的Web应用。</p>
-              
-              <el-divider content-position="left">表单组件展示</el-divider>
-              
-              <el-form :model="form" label-position="top" style="max-width: 460px; margin: 0 auto;">
-                <el-form-item label="姓名">
-                  <el-input v-model="form.name" placeholder="请输入姓名"></el-input>
-                </el-form-item>
-                
-                <el-form-item label="选择类型">
-                  <el-select v-model="form.type" placeholder="请选择" style="width: 100%;">
-                    <el-option label="选项一" value="1"></el-option>
-                    <el-option label="选项二" value="2"></el-option>
-                    <el-option label="选项三" value="3"></el-option>
-                  </el-select>
-                </el-form-item>
-                
-                <el-form-item label="开关">
-                  <el-switch v-model="form.active"></el-switch>
-                </el-form-item>
-                
-                <el-form-item label="重要程度">
-                  <el-rate v-model="form.rate"></el-rate>
-                </el-form-item>
-                
-                <el-form-item>
-                  <el-button type="primary" @click="submitForm">提交</el-button>
-                  <el-button @click="resetForm">重置</el-button>
-                </el-form-item>
-              </el-form>
-            </el-card>
+<html>
+  <head>
+    <title>Element Plus 演示</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="${CDN_URLS.ELEMENT_PLUS_CSS}">
+    <script src="${CDN_URLS.VUE}"></script>
+    <script src="${CDN_URLS.ELEMENT_PLUS_JS}"></script>
+    <script src="${CDN_URLS.ELEMENT_PLUS_ICONS}"></script>
+    <style>
+      [v-cloak] { display: none; }
+      body { background-color: #f5f7fa; }
+    </style>
+  </head>
+  <body>
+    <div id="app" v-cloak>
+      <el-config-provider>
+        <div class="container" style="max-width: 800px; margin: 40px auto; padding: 0 20px;">
+          <!-- Element Plus 标题和组件展示 -->
+          <el-card shadow="hover" class="mb-4">
+            <template #header>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold;">Element Plus 组件库</span>
+                <el-tag type="success">v2.9.7</el-tag>
+              </div>
+            </template>
             
-            <div style="text-align: center; margin-top: 30px; color: #909399; font-size: 14px;">
-              请在下方输入提示词，AI将为您生成自定义Element Plus应用
-            </div>
+            <p style="margin-bottom: 20px;">本模板演示了Element Plus常用组件，您可以基于此模板创建优雅的Web应用。</p>
+            
+            <el-divider content-position="left">表单组件展示</el-divider>
+            
+            <el-form :model="form" label-position="top" style="max-width: 460px; margin: 0 auto;">
+              <el-form-item label="姓名">
+                <el-input v-model="form.name" placeholder="请输入姓名">
+                  <template #prefix>
+                    <el-icon><User /></el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              
+              <el-form-item label="选择类型">
+                <el-select v-model="form.type" placeholder="请选择" style="width: 100%;">
+                  <el-option label="选项一" value="1"></el-option>
+                  <el-option label="选项二" value="2"></el-option>
+                  <el-option label="选项三" value="3"></el-option>
+                </el-select>
+              </el-form-item>
+              
+              <el-form-item label="开关">
+                <el-switch v-model="form.active"></el-switch>
+              </el-form-item>
+              
+              <el-form-item label="重要程度">
+                <el-rate v-model="form.rate"></el-rate>
+              </el-form-item>
+              
+              <el-form-item>
+                <el-button type="primary" @click="submitForm">
+                  <el-icon><Check /></el-icon> 提交
+                </el-button>
+                <el-button @click="resetForm">
+                  <el-icon><Refresh /></el-icon> 重置
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </el-card>
+          
+          <div style="text-align: center; margin-top: 30px; color: #909399; font-size: 14px;">
+            请在下方输入提示词，AI将为您生成自定义Element Plus应用
           </div>
-        </el-config-provider>
-      </div>
-  
-      <script>
-        const { createApp, ref, reactive } = Vue;
-        
-        const App = {
-          setup() {
-            // 表单数据
-            const form = reactive({
-              name: '',
-              type: '',
-              active: false,
-              rate: 3
-            });
-            
-            // 表单方法
-            const submitForm = () => {
-              ElMessage.success('表单提交成功！');
-              console.log('表单数据:', form);
-            };
-            
-            const resetForm = () => {
-              form.name = '';
-              form.type = '';
-              form.active = false;
-              form.rate = 3;
-              ElMessage.info('表单已重置');
-            };
-            
-            return {
-              form,
-              submitForm,
-              resetForm
-            };
-          }
-        };
-        
-        const app = createApp(App);
-        app.use(ElementPlus);
-        app.mount('#app');
-      </script>
-    </body>
-  </html>`
+        </div>
+      </el-config-provider>
+    </div>
+
+    <script>
+      const { createApp, ref, reactive } = Vue;
+      
+      // 导入Element Plus图标
+      const { 
+        User, 
+        Check, 
+        Refresh
+      } = ElementPlusIconsVue;
+      
+      const App = {
+        setup() {
+          // 表单数据
+          const form = reactive({
+            name: '',
+            type: '',
+            active: false,
+            rate: 3
+          });
+          
+          // 表单方法
+          const submitForm = () => {
+            ElMessage.success('表单提交成功！');
+            console.log('表单数据:', form);
+          };
+          
+          const resetForm = () => {
+            form.name = '';
+            form.type = '';
+            form.active = false;
+            form.rate = 3;
+            ElMessage.info('表单已重置');
+          };
+          
+          return {
+            form,
+            submitForm,
+            resetForm
+          };
+        },
+        components: {
+          User,
+          Check,
+          Refresh
+        }
+      };
+      
+      const app = createApp(App);
+      app.use(ElementPlus);
+      app.mount('#app');
+    </script>
+  </body>
+</html>`
     },
     naiveUI: {
       name: "Vue 3 + Naive UI",
