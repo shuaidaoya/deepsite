@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    image: 195658/deepsite:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENAI_API_KEY=sk-your-openai-api-key
+      - OPENAI_MODEL=deepseek-ai/DeepSeek-V3-0324
+      - OPENAI_BASE_URL=https://api.openai.com/v1
+      - APP_PORT=3000
+    restart: always

@@ -23,9 +23,7 @@ function AskAI({
   selectedTemplateId,
   selectedUI,
   selectedTools,
-  onTemplateChange,
-  modelParams,
-  onModelParamsChange
+  modelParams
 }: {
   html: string;
   setHtml: (html: string) => void;

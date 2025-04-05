@@ -19,13 +19,13 @@ const CDN_URLS = {
 
 const TEMPLATES = {
     vanilla: {
-      name: "原生HTML",
-      description: "仅使用HTML、CSS和JavaScript",
+      name: "TailwindCSS HTML",
+      description: "相较于原生HTML，使用TailwindCSS构建的HTML更加美观，更加易于维护。",
       systemPrompt: `ONLY USE HTML, CSS AND JAVASCRIPT. If you want to use ICON make sure to import the library first. Try to create the best UI possible by using only HTML, CSS and JAVASCRIPT. Please write clear and helpful comments in your code to explain the structure and functionality. Use as much as you can TailwindCSS for the CSS, if you can't do something with TailwindCSS, then use custom CSS (make sure to import <script src="${CDN_URLS.TAILWIND}"></script> in the head). Also, try to ellaborate as much as you can, to create something unique. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE`,
       html: `<!DOCTYPE html>
   <html>
     <head>
-      <title>原生HTML模板</title>
+      <title>TailwindCSS HTML</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta charset="utf-8">
       <script src="${CDN_URLS.TAILWIND}"></script>
@@ -62,7 +62,7 @@ const TEMPLATES = {
     },
     vue3: {
       name: "Vue 3",
-      description: "Vue 3 框架",
+      description: "Vue 3 框架，对模型能力要求较高，可能会出现生成代码无法执行的情况。",
       systemPrompt: `ONLY USE VUE 3 WITH HTML, CSS AND JAVASCRIPT. Create a Vue 3 application using the CDN version (${CDN_URLS.VUE}). Structure your code with Vue 3 components, reactivity, and proper Vue syntax. Please write clear and helpful comments in your code to explain the structure and functionality. Use as much as you can TailwindCSS for the CSS, if you can't do something with TailwindCSS, then use custom CSS (make sure to import <script src="${CDN_URLS.TAILWIND}"></script> in the head). Also, try to elaborate as much as you can, to create something unique. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE`,
       html: `<!DOCTYPE html>
   <html>
