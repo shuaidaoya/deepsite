@@ -74,6 +74,7 @@ npm start
 ## Docker 部署
 
 ### 使用 Docker Compose
+> docker镜像已发布,`docker pull 195658/deepsite:latest`
 
 1. 确保已安装 Docker 和 Docker Compose
 2. 编辑 `docker-compose.yml` 文件，设置必要的环境变量：
@@ -83,8 +84,7 @@ version: '3.8'
 
 services:
   web:
-    build: .
-    image: deepsite
+    image: 195658/deepsite:latest
     ports:
       - "30002:3000"
     environment:
