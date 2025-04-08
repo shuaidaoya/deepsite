@@ -25,10 +25,14 @@ function Preview({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [throttledHtml, setThrottledHtml] = useState(html);
   const lastUpdateTimeRef = useRef<number>(Date.now());
+  const [autoRefresh, setAutoRefresh] = useState(true);
   
   // 防止过于频繁刷新iframe，特别是在AI生成过程中
   useEffect(() => {
-    // 如果当前正在生成AI内容，使用更长的节流时间，减少CDN请求频率
+    // 如果自动刷新关闭，则不更新内容
+    if (!autoRefresh) return;
+    
+    // 统一设置节流时间为至少1秒，AI工作时使用更长的节流时间
     const throttleTime = isAiWorking ? 2000 : 1000;
     
     const now = Date.now();
@@ -44,9 +48,12 @@ function Preview({
       
       return () => clearTimeout(timerId);
     }
-  }, [html, isAiWorking]);
+  }, [html, isAiWorking, autoRefresh]);
 
   const handleRefreshIframe = () => {
+    // 无论自动刷新是否开启，都更新当前内容到iframe
+    setThrottledHtml(html);
+    
     if (iframeRef.current) {
       const iframe = iframeRef.current;
       const content = iframe.srcdoc;
@@ -55,6 +62,17 @@ function Preview({
         iframe.srcdoc = content;
       }, 10);
     }
+  };
+
+  // 切换自动刷新状态
+  const toggleAutoRefresh = () => {
+    // 直接设置新值，避免使用回调函数可能导致的多次执行
+    const newState = !autoRefresh;
+    setAutoRefresh(newState);
+    // 使用一次性通知，避免多次触发
+    toast.info(newState ? t('preview.autoRefreshOn') : t('preview.autoRefreshOff'), {
+      toastId: 'autoRefreshToggle' // 使用固定ID确保相同通知不会重复显示
+    });
   };
 
   // 处理加载模板
@@ -98,10 +116,30 @@ function Preview({
           <button
             className="bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 lg:border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer"
             onClick={handleRefreshIframe}
+            title={!autoRefresh ? t('preview.manualRefreshTooltip') : t('preview.refreshPreview')}
           >
             <TbReload />
             {t("preview.refreshPreview")}
           </button>
+          <div className="flex items-center gap-1.5 bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg border border-gray-100 lg:border-gray-900 hover:brightness-110 transition-all duration-100 cursor-pointer"
+            onClick={toggleAutoRefresh}
+            title={autoRefresh ? t('preview.disableAutoRefresh') : t('preview.enableAutoRefresh')}
+          >
+            {/* 自定义Switch开关 */}
+            <div className="relative w-10 h-5 flex items-center">
+              <div 
+                className={`absolute w-full h-full rounded-full transition-colors duration-300 ease-in-out ${
+                  autoRefresh ? 'bg-green-500 opacity-70' : 'bg-gray-500 opacity-30'
+                }`} 
+              />
+              <div 
+                className={`absolute w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ease-in-out ${
+                  autoRefresh ? 'translate-x-5 border border-green-400' : 'translate-x-0.5 border border-gray-300'
+                }`} 
+              />
+            </div>
+            <span className="ml-1">{t("preview.autoRefresh")}</span>
+          </div>
         </div>
         <PreviewActions html={html} isDisabled={isAiWorking || isResizing} onLoadTemplate={handleLoadTemplate} />
       </div>

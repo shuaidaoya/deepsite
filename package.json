@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.js"
+    "start": "node server.js",
+    "start:dev": "concurrently \"npm run dev\" \"npm run start\""
   },
   "dependencies": {
     "@huggingface/hub": "^1.1.1",

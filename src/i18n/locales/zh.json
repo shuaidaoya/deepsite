@@ -84,7 +84,13 @@
     "saveToDBTooltip": "保存为模板",
     "templatesList": "模板列表",
     "templatesListTooltip": "查看已保存的模板",
-    "templateLoaded": "模板已成功加载！"
+    "templateLoaded": "模板已成功加载！",
+    "autoRefresh": "自动刷新",
+    "autoRefreshOn": "自动刷新已开启",
+    "autoRefreshOff": "自动刷新已关闭",
+    "disableAutoRefresh": "关闭自动刷新",
+    "enableAutoRefresh": "开启自动刷新",
+    "manualRefreshTooltip": "点击手动刷新预览"
   },
   "common": {
     "cancel": "取消",

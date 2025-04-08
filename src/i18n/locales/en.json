@@ -68,7 +68,7 @@
     "zh": "中文"
   },
   "preview": {
-    "backToEditor": "Back to Editor",
+    "backToEditor": "Back to editor",
     "refreshPreview": "Refresh",
     "copy": "Copy",
     "copyTooltip": "Copy HTML",
@@ -80,11 +80,17 @@
     "copyFailed": "Failed to copy HTML.",
     "downloadSuccess": "HTML downloaded successfully!",
     "downloadFailed": "Failed to download HTML.",
-    "saveToDB": "Save Template",
-    "saveToDBTooltip": "Save as Template",
-    "templatesList": "Templates List",
-    "templatesListTooltip": "View Saved Templates",
-    "templateLoaded": "Template loaded successfully!"
+    "saveToDB": "Save template",
+    "saveToDBTooltip": "Save as template",
+    "templatesList": "Templates list",
+    "templatesListTooltip": "View saved templates",
+    "templateLoaded": "Template loaded successfully!",
+    "autoRefresh": "Auto Refresh",
+    "autoRefreshOn": "Auto refresh enabled",
+    "autoRefreshOff": "Auto refresh disabled",
+    "disableAutoRefresh": "Disable auto refresh",
+    "enableAutoRefresh": "Enable auto refresh",
+    "manualRefreshTooltip": "Click to manually refresh preview"
   },
   "common": {
     "cancel": "Cancel",
