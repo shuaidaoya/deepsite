@@ -33,7 +33,21 @@
       "toolsMultiSelect": "工具库为可选项，可以多选",
       "uiOptional": "组件库为可选项，可以不选择使用默认设置",
       "requireVue3": "请先选择Vue 3框架才能使用组件库",
-      "requireFramework": "请先选择框架才能选择工具库"
+      "requireFramework": "请先选择框架才能选择工具库",
+      "categories": {
+        "framework": "框架",
+        "ui": "组件库",
+        "tools": "工具库"
+      },
+      "toolDescriptions": {
+        "tailwindcss": "实用工具优先的CSS框架",
+        "vueuse": "Vue Composition API 实用工具集",
+        "dayjs": "轻量级日期处理库"
+      },
+      "frameworkDescriptions": {
+        "vanilla": "相较于原生HTML，使用TailwindCSS构建的HTML更加美观，更加易于维护。",
+        "vue3": "Vue 3 框架，对模型能力要求较高，可能会出现生成代码无法执行的情况。"
+      }
     }
   },
   "tabs": {
@@ -52,16 +66,41 @@
     "fixErrors": "请在部署前修复错误"
   },
   "askAI": {
+    "title": "AI 对话",
     "placeholder": "请 AI 更新您的 HTML...",
     "working": "请等待 AI 完成工作。",
     "clear": "清除",
     "optimizePromptTooltip": "优化您的提示词",
-    "promptOptimized": "提示词优化成功！"
+    "optimizePrompt": "优化提示词",
+    "promptOptimized": "提示词优化成功！",
+    "generate": "生成",
+    "showPreview": "查看预览",
+    "history": "历史记录",
+    "conversationHistory": "对话历史",
+    "clearHistory": "清空历史",
+    "confirmClearHistory": "确定要清空所有对话历史吗？",
+    "historyClearedSuccess": "历史记录已清空",
+    "noHistory": "暂无对话历史",
+    "you": "你",
+    "ai": "AI",
+    "viewDetail": "查看详情",
+    "yourPrompt": "你的提示词",
+    "aiResponse": "AI 响应",
+    "previewThis": "预览此页面",
+    "messageTime": "消息时间",
+    "copyMessage": "复制消息",
+    "messageCopied": "消息已复制",
+    "loadPrompt": "使用此提示词",
+    "promptLoaded": "提示词已加载",
+    "emptyHistoryTip": "开始对话，创建您的第一条记录"
   },
   "toast": {
     "contentRestored": "从本地存储恢复了之前的 HTML 内容。",
     "remixLoaded": "成功加载 Remix 内容。",
-    "remixFailed": "加载 Remix 内容失败。"
+    "remixFailed": "加载 Remix 内容失败。",
+    "templateLoaded": "已加载 {name} 模板",
+    "templateLoadFailed": "无法加载模板",
+    "templateLoadError": "加载模板时出错"
   },
   "language": {
     "en": "English",
@@ -90,7 +129,8 @@
     "autoRefreshOff": "自动刷新已关闭",
     "disableAutoRefresh": "关闭自动刷新",
     "enableAutoRefresh": "开启自动刷新",
-    "manualRefreshTooltip": "点击手动刷新预览"
+    "manualRefreshTooltip": "点击手动刷新预览",
+    "moreActions": "更多操作"
   },
   "common": {
     "cancel": "取消",
@@ -124,6 +164,7 @@
     "notInitialized": "数据库未初始化，请稍后再试"
   },
   "errors": {
-    "optimizePromptFailed": "优化提示词失败"
+    "optimizePromptFailed": "优化提示词失败",
+    "optimizationFailed": "优化提示词失败"
   }
 } 

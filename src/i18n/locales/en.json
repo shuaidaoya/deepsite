@@ -33,7 +33,21 @@
       "toolsMultiSelect": "Tools are optional and multiple can be selected",
       "uiOptional": "UI component library is optional, you can use default settings",
       "requireVue3": "Please select Vue 3 framework first to use component libraries",
-      "requireFramework": "Please select a framework first to choose tools"
+      "requireFramework": "Please select a framework first to choose tools",
+      "categories": {
+        "framework": "Framework",
+        "ui": "UI Components",
+        "tools": "Tools"
+      },
+      "toolDescriptions": {
+        "tailwindcss": "Utility-first CSS framework",
+        "vueuse": "Collection of Vue Composition API utilities",
+        "dayjs": "Lightweight date library"
+      },
+      "frameworkDescriptions": {
+        "vanilla": "More attractive and easier to maintain than vanilla HTML, built with TailwindCSS.",
+        "vue3": "Vue 3 framework, requires higher model capability, may result in code that cannot be executed."
+      }
     }
   },
   "tabs": {
@@ -52,16 +66,41 @@
     "fixErrors": "Please fix errors before deploying"
   },
   "askAI": {
+    "title": "AI Chat",
     "placeholder": "Ask AI to update your HTML...",
     "working": "Please wait while AI is working.",
     "clear": "Clear",
     "optimizePromptTooltip": "Optimize your prompt",
-    "promptOptimized": "Prompt optimized successfully!"
+    "optimizePrompt": "Optimize Prompt",
+    "promptOptimized": "Prompt optimized successfully!",
+    "generate": "Generate",
+    "showPreview": "Show Preview",
+    "history": "History",
+    "conversationHistory": "Conversation History",
+    "clearHistory": "Clear History",
+    "confirmClearHistory": "Are you sure you want to clear all conversation history?",
+    "historyClearedSuccess": "History cleared successfully",
+    "noHistory": "No conversation history",
+    "you": "You",
+    "ai": "AI",
+    "viewDetail": "View Detail",
+    "yourPrompt": "Your Prompt",
+    "aiResponse": "AI Response",
+    "previewThis": "Preview This Page",
+    "messageTime": "Message Time",
+    "copyMessage": "Copy Message",
+    "messageCopied": "Message copied",
+    "loadPrompt": "Use This Prompt",
+    "promptLoaded": "Prompt loaded",
+    "emptyHistoryTip": "Start a conversation to create your first record"
   },
   "toast": {
     "contentRestored": "Previous HTML content restored from local storage.",
     "remixLoaded": "Remix content loaded successfully.",
-    "remixFailed": "Failed to load remix content."
+    "remixFailed": "Failed to load remix content.",
+    "templateLoaded": "Template {name} loaded successfully",
+    "templateLoadFailed": "Failed to load template",
+    "templateLoadError": "Error loading template"
   },
   "language": {
     "en": "English",
@@ -90,7 +129,8 @@
     "autoRefreshOff": "Auto refresh disabled",
     "disableAutoRefresh": "Disable auto refresh",
     "enableAutoRefresh": "Enable auto refresh",
-    "manualRefreshTooltip": "Click to manually refresh preview"
+    "manualRefreshTooltip": "Click to manually refresh preview",
+    "moreActions": "More Actions"
   },
   "common": {
     "cancel": "Cancel",
@@ -124,6 +164,7 @@
     "notInitialized": "Database not initialized, please try again later"
   },
   "errors": {
-    "optimizePromptFailed": "Failed to optimize prompt"
+    "optimizePromptFailed": "Failed to optimize prompt",
+    "optimizationFailed": "Failed to optimize prompt"
   }
 } 

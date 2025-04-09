@@ -66,9 +66,9 @@ function Settings({
   
   // 模板分类数据
   const [categories, setCategories] = useState<TemplateCategory[]>([
-    { id: 'framework', name: '框架', templates: [] },
-    { id: 'ui', name: '组件库', templates: [] },
-    { id: 'tools', name: '工具库', templates: [] }
+    { id: 'framework', name: t('settings.templates.categories.framework'), templates: [] },
+    { id: 'ui', name: t('settings.templates.categories.ui'), templates: [] },
+    { id: 'tools', name: t('settings.templates.categories.tools'), templates: [] }
   ]);
 
   // 用户选择的模板配置
@@ -86,9 +86,9 @@ function Settings({
 
   // 工具库选项（静态）
   const toolLibraries = [
-    { id: 'tailwindcss', name: 'Tailwind CSS', description: '实用工具优先的CSS框架' },
-    { id: 'vueuse', name: 'VueUse', description: 'Vue Composition API 实用工具集' },
-    { id: 'dayjs', name: 'Day.js', description: '轻量级日期处理库' }
+    { id: 'tailwindcss', name: 'Tailwind CSS', description: t('settings.templates.toolDescriptions.tailwindcss') },
+    { id: 'vueuse', name: 'VueUse', description: t('settings.templates.toolDescriptions.vueuse') },
+    { id: 'dayjs', name: 'Day.js', description: t('settings.templates.toolDescriptions.dayjs') }
   ];
   
   // 处理框架或组件库选择
@@ -173,9 +173,9 @@ function Settings({
             );
             
             setCategories([
-              { id: 'framework', name: '框架', templates: frameworkTemplates },
-              { id: 'ui', name: '组件库', templates: uiTemplates },
-              { id: 'tools', name: '工具库', templates: [] }
+              { id: 'framework', name: t('settings.templates.categories.framework'), templates: frameworkTemplates },
+              { id: 'ui', name: t('settings.templates.categories.ui'), templates: uiTemplates },
+              { id: 'tools', name: t('settings.templates.categories.tools'), templates: [] }
             ]);
             
             // 设置初始选择
@@ -201,7 +201,7 @@ function Settings({
         setParams(modelParams);
       }
     }
-  }, [open, selectedTemplate, selectedUI, selectedTools, modelParams]);
+  }, [open, selectedTemplate, selectedUI, selectedTools, modelParams, t]);
   
   return (
     <>
@@ -324,7 +324,9 @@ function Settings({
                             />
                             <div>
                               <div className="font-medium text-sm text-gray-800">{template.name}</div>
-                              <div className="text-xs text-gray-500 mt-0.5">{template.description}</div>
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                {t(`settings.templates.frameworkDescriptions.${template.id}`)}
+                              </div>
                             </div>
                           </label>
                         ))}

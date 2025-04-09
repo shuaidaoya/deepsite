@@ -132,15 +132,15 @@ function App() {
             editorRef.current?.getModel()?.getLineCount() ?? 0
           );
           if (shouldShowToast) {
-            toast.success(`已加载 ${data.template.name} 模板`);
+            toast.success(t("toast.templateLoaded", { name: data.template.name }));
           }
         }
       } else {
-        toast.error("无法加载模板");
+        toast.error(t("toast.templateLoadFailed"));
       }
     } catch (error) {
       console.error("Error loading template:", error);
-      toast.error("加载模板时出错");
+      toast.error(t("toast.templateLoadError"));
     }
   };
 
