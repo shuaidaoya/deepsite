@@ -317,7 +317,13 @@ app.post("/api/ask-ai", async (req, res) => {
   res.setHeader("Content-Type", "text/plain");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-
+  // 添加以下响应头以优化流式传输
+  res.setHeader("Transfer-Encoding", "chunked");
+  res.setHeader("X-Accel-Buffering", "no"); // 禁用 Nginx 缓冲
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Keep-Alive", "timeout=120"); // 保持连接120秒
+  res.flushHeaders(); // 立即发送响应头
+  
   const selectedProvider = PROVIDERS["openai"];
 
   try {
