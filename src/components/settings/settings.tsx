@@ -29,6 +29,9 @@ interface SelectedTemplates {
 export interface ModelParameters {
   max_tokens: number;
   temperature: number;
+  api_key?: string;
+  base_url?: string;
+  model?: string;
 }
 
 // 定义选择回调函数的类型
@@ -64,6 +67,24 @@ function Settings({
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'templates' | 'model'>('templates');
   
+  // 添加环境变量状态
+  const [envStatus, setEnvStatus] = useState({
+    apiKey: false,
+    baseUrl: false,
+    model: false
+  });
+  
+  // 添加测试状态
+  const [testStatus, setTestStatus] = useState({
+    loading: false,
+    tested: false,
+    success: false,
+    apiKey: false,
+    baseUrl: false,
+    model: false,
+    message: ''
+  });
+  
   // 模板分类数据
   const [categories, setCategories] = useState<TemplateCategory[]>([
     { id: 'framework', name: t('settings.templates.categories.framework'), templates: [] },
@@ -81,7 +102,10 @@ function Settings({
   // 模型参数
   const [params, setParams] = useState<ModelParameters>({
     max_tokens: 64000,
-    temperature: 0
+    temperature: 0,
+    api_key: '',
+    base_url: '',
+    model: ''
   });
 
   // 工具库选项（静态）
@@ -133,7 +157,7 @@ function Settings({
   };
 
   // 处理模型参数变更
-  const handleParamChange = (param: keyof ModelParameters, value: number) => {
+  const handleParamChange = (param: keyof ModelParameters, value: number | string) => {
     setParams(prev => ({
       ...prev,
       [param]: value
@@ -151,6 +175,85 @@ function Settings({
       }
       
       onClose(false);
+    }
+  };
+  
+  // 测试连接
+  const testConnection = async () => {
+    // 准备测试参数
+    const testParams = {
+      api_key: params.api_key,
+      base_url: params.base_url,
+      model: params.model
+    };
+    
+    // 检查参数：如果用户没有提供，但后端已配置，则不需要在测试请求中包含
+    if (!testParams.api_key && envStatus.apiKey) {
+      delete testParams.api_key;
+    }
+    
+    if (!testParams.base_url && envStatus.baseUrl) {
+      delete testParams.base_url;
+    }
+    
+    if (!testParams.model && envStatus.model) {
+      delete testParams.model;
+    }
+    
+    // 设置测试状态为加载中
+    setTestStatus(prev => ({
+      ...prev,
+      loading: true,
+      tested: false,
+      message: ''
+    }));
+    
+    try {
+      const response = await fetch('/api/test-connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testParams)
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.ok) {
+        // 测试成功
+        setTestStatus({
+          loading: false,
+          tested: true,
+          success: true,
+          apiKey: true,
+          baseUrl: true,
+          model: true,
+          message: t('settings.testSuccess')
+        });
+      } else {
+        // 测试失败
+        setTestStatus({
+          loading: false,
+          tested: true,
+          success: false,
+          apiKey: false,
+          baseUrl: false,
+          model: false,
+          message: data.message || t('settings.testFailed')
+        });
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      // 发生错误
+      setTestStatus({
+        loading: false,
+        tested: true,
+        success: false,
+        apiKey: false,
+        baseUrl: false,
+        model: false,
+        message: error instanceof Error ? error.message : t('settings.testError')
+      });
     }
   };
   
@@ -192,9 +295,25 @@ function Settings({
         setLoading(false);
       }
     };
+
+    // 获取环境变量配置状态
+    const fetchEnvStatus = async () => {
+      try {
+        const response = await fetch('/api/check-env');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok && data.env) {
+            setEnvStatus(data.env);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch environment status:', error);
+      }
+    };
     
     if (open) {
       fetchTemplates();
+      fetchEnvStatus();
       
       // 如果有传入模型参数，初始化状态
       if (modelParams) {
@@ -440,6 +559,146 @@ function Settings({
                 <div className="space-y-6">
                   <div className="space-y-4">
                     <h3 className="text-sm font-medium text-gray-700">{t('settings.modelParams.title')}</h3>
+                    
+                    {/* API KEY设置 */}
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-700 font-medium flex items-center justify-between">
+                        <span>OpenAI API Key</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          testStatus.tested && testStatus.success ? 'bg-green-100 text-green-800' :
+                          envStatus.apiKey ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          <span className={`w-2 h-2 mr-1.5 rounded-full ${
+                            testStatus.tested && testStatus.success ? 'bg-green-500' :
+                            envStatus.apiKey ? 'bg-green-500' : 'bg-red-500'
+                          }`}></span>
+                          {testStatus.tested && testStatus.success ? t('settings.verified') :
+                          envStatus.apiKey ? t('settings.configured') : t('settings.notConfigured')}
+                        </span>
+                      </label>
+                      <input
+                        type="password"
+                        value={params.api_key || ''}
+                        onChange={(e) => handleParamChange('api_key', e.target.value)}
+                        placeholder={t('settings.modelParams.apiKeyPlaceholder')}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                      <p className="text-xs text-gray-500">
+                        {t('settings.modelParams.apiKeyDesc')}
+                      </p>
+                    </div>
+                    
+                    {/* Base URL设置 */}
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-700 font-medium flex items-center justify-between">
+                        <span>API Base URL</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          testStatus.tested && testStatus.success ? 'bg-green-100 text-green-800' :
+                          envStatus.baseUrl ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          <span className={`w-2 h-2 mr-1.5 rounded-full ${
+                            testStatus.tested && testStatus.success ? 'bg-green-500' :
+                            envStatus.baseUrl ? 'bg-green-500' : 'bg-red-500'
+                          }`}></span>
+                          {testStatus.tested && testStatus.success ? t('settings.verified') :
+                          envStatus.baseUrl ? t('settings.configured') : t('settings.notConfigured')}
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        value={params.base_url || ''}
+                        onChange={(e) => handleParamChange('base_url', e.target.value)}
+                        placeholder="https://api.openai.com/v1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                      <p className="text-xs text-gray-500">
+                        {t('settings.modelParams.baseUrlDesc')}
+                      </p>
+                    </div>
+                    
+                    {/* Model设置 */}
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-700 font-medium flex items-center justify-between">
+                        <span>Model</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          testStatus.tested && testStatus.success ? 'bg-green-100 text-green-800' :
+                          envStatus.model ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          <span className={`w-2 h-2 mr-1.5 rounded-full ${
+                            testStatus.tested && testStatus.success ? 'bg-green-500' :
+                            envStatus.model ? 'bg-green-500' : 'bg-red-500'
+                          }`}></span>
+                          {testStatus.tested && testStatus.success ? t('settings.verified') :
+                           envStatus.model ? t('settings.configured') : t('settings.notConfigured')}
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        value={params.model || ''}
+                        onChange={(e) => handleParamChange('model', e.target.value)}
+                        placeholder="gpt-4o"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                      <p className="text-xs text-gray-500">
+                        {t('settings.modelParams.modelDesc')}
+                      </p>
+                    </div>
+                    
+                    {/* 测试连接按钮 */}
+                    <div className="mt-4">
+                      <button
+                        onClick={testConnection}
+                        disabled={testStatus.loading}
+                        className={`w-full flex justify-center items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm ${
+                          testStatus.loading 
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                        }`}
+                      >
+                        {testStatus.loading ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {t('settings.testing')}
+                          </>
+                        ) : (
+                          t('settings.testConnection')
+                        )}
+                      </button>
+                      
+                      {/* 测试结果信息 */}
+                      {testStatus.tested && (
+                        <div className={`mt-3 p-3 rounded-md ${
+                          testStatus.success ? 'bg-green-50 text-green-800 border border-green-100' : 'bg-red-50 text-red-800 border border-red-100'
+                        }`}>
+                          <div className="flex">
+                            <div className="flex-shrink-0">
+                              {testStatus.success ? (
+                                <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              ) : (
+                                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm font-medium">
+                                {testStatus.success ? t('settings.testSuccess') : t('settings.testFailed')}
+                              </p>
+                              {testStatus.message && (
+                                <p className="mt-1 text-xs">
+                                  {testStatus.message}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     
                     {/* max_tokens设置 */}
                     <div className="space-y-2">

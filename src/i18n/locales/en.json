@@ -15,6 +15,14 @@
     "templateTab": "Templates",
     "modelTab": "Model Parameters",
     "applySettings": "Apply Settings",
+    "configured": "Configured",
+    "notConfigured": "Not Configured",
+    "verified": "Verified",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "testSuccess": "Connection Successful",
+    "testFailed": "Connection Failed",
+    "testError": "Test Error",
     "modelParams": {
       "title": "Model Parameters",
       "maxTokens": "Maximum Tokens (max_tokens)",
@@ -24,7 +32,11 @@
       "defaultValues": "Default values: max_tokens = 64000, temperature = 0. These settings can also be configured as defaults in environment variables.",
       "precise": "Precise (0)",
       "balanced": "Balanced (1)",
-      "creative": "Creative (2)"
+      "creative": "Creative (2)",
+      "apiKeyPlaceholder": "Enter your OpenAI API Key",
+      "apiKeyDesc": "Custom API key will override server's default. Leave empty to use server's API key.",
+      "baseUrlDesc": "Custom Base URL endpoint. Default is https://api.openai.com/v1",
+      "modelDesc": "Model to use for AI generation. Default is gpt-4o."
     },
     "templates": {
       "framework": "Select Framework",
@@ -113,7 +125,7 @@
     "contentRestored": "Previous HTML content restored from local storage.",
     "remixLoaded": "Remix content loaded successfully.",
     "remixFailed": "Failed to load remix content.",
-    "templateLoaded": "Template {name} loaded successfully",
+    "templateLoaded": "Template {{name}} loaded successfully",
     "templateLoadFailed": "Failed to load template",
     "templateLoadError": "Error loading template"
   },

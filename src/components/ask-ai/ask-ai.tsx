@@ -275,7 +275,10 @@ function AskAI({
           language: currentLanguage, 
           ...(modelParams ? {
             max_tokens: modelParams.max_tokens,
-            temperature: modelParams.temperature
+            temperature: modelParams.temperature,
+            api_key: modelParams.api_key,
+            base_url: modelParams.base_url,
+            model: modelParams.model
           } : {})
         }),
         headers: {
@@ -465,7 +468,12 @@ function AskAI({
         method: "POST",
         body: JSON.stringify({
           prompt,
-          language: currentLanguage
+          language: currentLanguage,
+          ...(modelParams ? {
+            api_key: modelParams.api_key,
+            base_url: modelParams.base_url,
+            model: modelParams.model
+          } : {})
         }),
         headers: {
           "Content-Type": "application/json",

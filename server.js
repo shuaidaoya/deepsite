@@ -78,9 +78,107 @@ app.get("/api/templates/:id", (req, res) => {
   });
 });
 
+// 检查OpenAI环境变量配置状态的API
+app.get("/api/check-env", (req, res) => {
+  // 检查各项环境变量是否已配置
+  const apiKeyConfigured = !!process.env.OPENAI_API_KEY;
+  const baseUrlConfigured = !!process.env.OPENAI_BASE_URL;
+  const modelConfigured = !!process.env.OPENAI_MODEL;
+  
+  return res.status(200).send({
+    ok: true,
+    env: {
+      apiKey: apiKeyConfigured,
+      baseUrl: baseUrlConfigured,
+      model: modelConfigured
+    }
+  });
+});
+
+// 测试API连接
+app.post("/api/test-connection", async (req, res) => {
+  const { api_key, base_url, model } = req.body;
+  
+  try {
+    // 优先使用用户提供的参数，如果没有则使用环境变量
+    const apiKey = api_key || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).send({
+        ok: false,
+        message: "API key is required for testing",
+      });
+    }
+
+    const baseUrl = base_url || OPENAI_BASE_URL;
+    const modelId = model || MODEL_ID;
+
+    // 构建简单的测试请求
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [
+          {
+            role: "user",
+            content: "hi",
+          },
+        ],
+        max_tokens: 50,  // 限制返回长度，加快测试速度
+        temperature: 0   // 固定返回结果
+      })
+    };
+
+    console.log("Testing OpenAI API connection");
+    console.log(`Testing API at: ${baseUrl}`);
+    console.log(`Testing model: ${modelId}`);
+    
+    const response = await fetch(`${baseUrl}/chat/completions`, requestOptions);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return res.status(response.status).send({
+        ok: false,
+        message: errorData.error?.message || "Connection test failed",
+      });
+    }
+
+    const data = await response.json();
+    
+    // 验证响应中是否有有效内容
+    if (data && data.choices && data.choices[0] && data.choices[0].message) {
+      return res.status(200).send({
+        ok: true,
+        message: "Connection test successful",
+        response: data.choices[0].message.content
+      });
+    } else {
+      return res.status(500).send({
+        ok: false,
+        message: "Received invalid response format"
+      });
+    }
+  } catch (error) {
+    console.error("Error testing connection:", error);
+    return res.status(500).send({
+      ok: false,
+      message: error.message || "An error occurred during connection test",
+    });
+  }
+});
+
 // 优化提示词的接口
 app.post("/api/optimize-prompt", async (req, res) => {
-  const { prompt, language } = req.body;
+  const { 
+    prompt, 
+    language,
+    api_key,
+    base_url,
+    model
+  } = req.body;
   if (!prompt) {
     return res.status(400).send({
       ok: false,
@@ -89,14 +187,18 @@ app.post("/api/optimize-prompt", async (req, res) => {
   }
 
   try {
-    // OpenAI API 调用
-    const apiKey = process.env.OPENAI_API_KEY;
+    // 优先使用用户提供的API KEY，如果未提供则使用环境变量
+    const apiKey = api_key || process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return res.status(500).send({
         ok: false,
         message: "OpenAI API key is not configured.",
       });
     }
+
+    // 优先使用用户提供的BASE URL和Model
+    const baseUrl = base_url || OPENAI_BASE_URL;
+    const modelId = model || MODEL_ID;
 
     // 根据语言设置系统提示词
     const systemPrompt = language === 'zh'
@@ -121,7 +223,7 @@ app.post("/api/optimize-prompt", async (req, res) => {
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: MODEL_ID,
+        model: modelId,
         messages,
         temperature: 0.7,
         max_tokens: 2000
@@ -129,8 +231,10 @@ app.post("/api/optimize-prompt", async (req, res) => {
     };
 
     console.log("Sending prompt optimization request to OpenAI API");
+    console.log(`Using API at: ${baseUrl}`);
+    console.log(`Using model: ${modelId}`);
     
-    const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, requestOptions);
+    const response = await fetch(`${baseUrl}/chat/completions`, requestOptions);
 
     if (!response.ok) {
       console.error(`OpenAI API error: ${response.status} ${response.statusText}`);
@@ -181,7 +285,20 @@ app.post("/api/deploy", async (req, res) => {
 });
 
 app.post("/api/ask-ai", async (req, res) => {
-  const { prompt, html, previousPrompt, templateId, language, ui, tools, max_tokens, temperature } = req.body;
+  const { 
+    prompt, 
+    html, 
+    previousPrompt, 
+    templateId, 
+    language, 
+    ui, 
+    tools, 
+    max_tokens, 
+    temperature,
+    api_key,
+    base_url,
+    model
+  } = req.body;
   if (!prompt) {
     return res.status(400).send({
       ok: false,
@@ -197,8 +314,8 @@ app.post("/api/ask-ai", async (req, res) => {
   const selectedProvider = PROVIDERS["openai"];
 
   try {
-    // OpenAI API 调用
-    const apiKey = process.env.OPENAI_API_KEY;
+    // 优先使用用户提供的API KEY，如果未提供则使用环境变量
+    const apiKey = api_key || process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return res.status(500).send({
         ok: false,
@@ -206,7 +323,13 @@ app.post("/api/ask-ai", async (req, res) => {
       });
     }
 
-    console.log(`Using OpenAI API at: ${OPENAI_BASE_URL}`);
+    // 优先使用用户提供的BASE URL，如果未提供则使用环境变量
+    const baseUrl = base_url || OPENAI_BASE_URL;
+    // 优先使用用户提供的Model，如果未提供则使用环境变量
+    const modelId = model || MODEL_ID;
+
+    console.log(`Using OpenAI API at: ${baseUrl}`);
+    console.log(`Using model: ${modelId}`);
     
     // 获取基础系统提示词
     let systemPrompt = templateId && TEMPLATES[templateId] 
@@ -298,7 +421,7 @@ app.post("/api/ask-ai", async (req, res) => {
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: MODEL_ID,
+        model: modelId,
         messages,
         stream: true,
         max_tokens: max_tokens || parseInt(DEFAULT_MAX_TOKENS),
@@ -306,16 +429,16 @@ app.post("/api/ask-ai", async (req, res) => {
       })
     };
 
-    console.log(`Sending request to OpenAI API with model: ${MODEL_ID}`);
+    console.log(`Sending request to OpenAI API with model: ${modelId}`);
     console.log(`Using max_tokens: ${max_tokens || DEFAULT_MAX_TOKENS}, temperature: ${temperature !== undefined ? temperature : DEFAULT_TEMPERATURE}`);
-    console.log("Request URL:", `${OPENAI_BASE_URL}/chat/completions`);
+    console.log("Request URL:", `${baseUrl}/chat/completions`);
     console.log("Request headers:", {
       ...requestOptions.headers,
       "Authorization": "Bearer [API_KEY_HIDDEN]"
     });
     console.log("Request body:", JSON.parse(requestOptions.body));
     
-    const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, requestOptions);
+    const response = await fetch(`${baseUrl}/chat/completions`, requestOptions);
 
     if (!response.ok) {
       console.error(`OpenAI API error: ${response.status} ${response.statusText}`);
