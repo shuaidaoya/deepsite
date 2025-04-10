@@ -137,6 +137,36 @@ function AskAI({
   const [showHistoryDetail, setShowHistoryDetail] = useState(false);
   // 当前查看的消息
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
+  
+  // 删除确认状态
+  const [deletingItemIndex, setDeletingItemIndex] = useState<number | null>(null);
+  const [confirmingClearAll, setConfirmingClearAll] = useState(false);
+
+  // 添加弹窗自动关闭功能
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (deletingItemIndex !== null) {
+      timer = setTimeout(() => {
+        setDeletingItemIndex(null);
+      }, 3000); // 3秒后自动关闭弹窗
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [deletingItemIndex]);
+
+  // 同样为清空所有对话添加自动关闭
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (confirmingClearAll) {
+      timer = setTimeout(() => {
+        setConfirmingClearAll(false);
+      }, 3000); // 3秒后自动关闭弹窗
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [confirmingClearAll]);
 
   // 音频在需要时再创建
   const playSuccessSound = () => {
@@ -405,13 +435,18 @@ function AskAI({
     }
   };
 
-  // 清除对话历史
-  const clearHistory = () => {
-    if (window.confirm(t('askAI.confirmClearHistory'))) {
-      setChatHistory([]);
-      localStorage.removeItem('chatHistory');
-      toast.success(t('askAI.historyClearedSuccess'));
-    }
+  // 清除对话历史 - 现在直接用于显示确认界面
+  // const clearHistory = () => {
+  //   // 显示内联确认，而不是全屏对话框
+  //   setConfirmingClearAll(true);
+  // };
+
+  // 确认清除所有历史
+  const confirmClearAll = () => {
+    setChatHistory([]);
+    localStorage.removeItem('chatHistory');
+    toast.success(t('askAI.historyClearedSuccess'));
+    setConfirmingClearAll(false);
   };
 
   // 格式化时间戳为可读形式
@@ -436,6 +471,33 @@ function AskAI({
     console.log('Toggle history, current state:', showHistory); // 添加调试日志
     console.log('Current chat history:', chatHistory); // 添加调试日志
     setShowHistory(!showHistory);
+  };
+
+  // 添加删除单条消息的方法
+  const deleteHistoryItem = (index: number) => {
+    const newHistory = [...chatHistory];
+    newHistory.splice(index, 1);
+    setChatHistory(newHistory);
+    localStorage.setItem('chatHistory', JSON.stringify(newHistory));
+    toast.success(t('askAI.messageDeleted'));
+  };
+  
+  // 确认删除单条消息
+  const confirmDeleteItem = (index: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // 阻止冒泡，避免点击到父元素
+    // 如果已经显示确认框，则关闭它
+    if (deletingItemIndex === index) {
+      setDeletingItemIndex(null);
+      return;
+    }
+    setDeletingItemIndex(index); // 设置正在删除的项目索引，显示内联确认按钮
+  };
+  
+  // 复制消息内容到提示框
+  const copyToPrompt = (content: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setPrompt(content);
+    toast.success(t('askAI.copyToPrompt'));
   };
 
   return (
@@ -469,15 +531,63 @@ function AskAI({
               >
                 {t("common.close")}
               </button>
-              <button
-                className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors duration-200 flex items-center gap-1 cursor-pointer"
-                onClick={clearHistory}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {t("askAI.clearHistory")}
-              </button>
+              <div className="relative">
+                {/* 清空历史按钮和确认区域 */}
+                <div className="flex items-center">
+                  {confirmingClearAll ? (
+                    <div className="relative inline-flex">
+                      <button
+                        className="text-xs px-3 py-1.5 bg-red-50 text-red-400 rounded-md shadow-sm opacity-50 cursor-default"
+                        disabled
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {t("askAI.clearHistory")}
+                      </button>
+                      
+                      {/* 绝对定位的确认框 */}
+                      <div 
+                        className="absolute right-0 top-0 transform translate-x-full translate-y-0 z-50 flex items-center space-x-2 bg-white rounded-lg p-2 ml-2 shadow-lg animate-popIn border border-gray-100"
+                        style={{ 
+                          marginLeft: '12px', 
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)',
+                          backdropFilter: 'blur(8px)',
+                        }}
+                      >
+                        <span className="text-xs text-gray-700 px-2">{t("askAI.confirmClearHistory")}</span>
+                        <button
+                          className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white p-1.5 rounded text-xs transition-all duration-200 shadow-sm confirm-btn"
+                          onClick={confirmClearAll}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
+                        <button
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded text-xs transition-all duration-200 confirm-btn"
+                          onClick={() => setConfirmingClearAll(false)}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors duration-200 flex items-center gap-1 cursor-pointer shadow-sm"
+                      onClick={() => setConfirmingClearAll(true)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {t("askAI.clearHistory")}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           <div className="p-3 max-h-[calc(80vh-4rem)] lg:max-h-[250px] overflow-y-auto custom-scrollbar">
@@ -492,8 +602,9 @@ function AskAI({
               <div className="space-y-3">
                 {chatHistory.map((msg, index) => (
                   <div 
+                    id={`history-item-${index}`}
                     key={index}
-                    className={`p-3 rounded-lg text-sm transition-all duration-200 ${
+                    className={`p-3 rounded-lg text-sm transition-all duration-200 group/item ${
                       msg.role === 'user' 
                         ? 'bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 cursor-pointer shadow-sm' 
                         : 'bg-gradient-to-r from-gray-50 to-white border border-gray-100'
@@ -518,13 +629,96 @@ function AskAI({
                           </>
                         )}
                       </span>
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        {formatTimestamp(msg.timestamp)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {formatTimestamp(msg.timestamp)}
+                        </span>
+                        
+                        {/* 操作按钮组 - 保持固定高度 */}
+                        <div className="opacity-0 group-hover/item:opacity-100 transition-opacity duration-200 flex items-center">
+                          {/* 复制到输入框按钮 */}
+                          <button 
+                            className="text-gray-400 hover:text-blue-500 p-1 rounded-full hover:bg-blue-50 transition-colors duration-150"
+                            onClick={(e) => copyToPrompt(msg.content, e)}
+                            title={t('askAI.copyToPrompt')}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                          </button>
+                          
+                          {/* 删除按钮区域 - 使用相对定位容器和精美设计的确认框 */}
+                          <div className="relative w-6 h-6 flex items-center justify-center">
+                            {/* 确认删除区域 - 优化设计和交互 */}
+                            {deletingItemIndex === index && (
+                              <div 
+                                className="absolute top-1/2 right-0 z-[999] flex items-center rounded-lg border border-gray-100 animate-popIn bg-white"
+                                style={{
+                                  padding: '6px 8px',
+                                  boxShadow: '0 4px 15px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)',
+                                  whiteSpace: 'nowrap',
+                                  transform: 'translate(calc(100% + 8px), -50%)',
+                                  backdropFilter: 'blur(8px)',
+                                }}
+                                onClick={(e) => e.stopPropagation()} // 防止点击确认框时触发父元素的事件
+                              >
+                                <span className="text-xs font-medium text-gray-700 mr-2 select-none">
+                                  {t('askAI.confirmDelete')}
+                                </span>
+                                <div className="flex space-x-1.5">
+                                  <button 
+                                    className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 p-1.5 text-white rounded transition-all duration-200 shadow-sm confirm-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteHistoryItem(index);
+                                      setDeletingItemIndex(null);
+                                    }}
+                                    aria-label={t('common.yes')}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </button>
+                                  <button 
+                                    className="bg-gray-100 hover:bg-gray-200 p-1.5 text-gray-600 rounded transition-all duration-200 confirm-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeletingItemIndex(null);
+                                    }}
+                                    aria-label={t('common.no')}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* 删除按钮 - 始终保持在相同位置 */}
+                            <button 
+                              id={`delete-btn-${index}`}
+                              className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors duration-150"
+                              onClick={(e) => confirmDeleteItem(index, e)}
+                              title={t('askAI.deleteMessage')}
+                              style={{ 
+                                opacity: deletingItemIndex === index ? 0.3 : 1,
+                                pointerEvents: deletingItemIndex === index ? 'none' : 'auto'
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    
+                    {/* 添加被删除的消息内容显示部分 */}
                     <div className={`${
                       msg.role === 'user' 
                         ? 'text-gray-700' 
@@ -618,17 +812,21 @@ function AskAI({
         )}
       </Dialog>
       
+      {/* Preview按钮 - 移到输入框区域外部，使用固定定位 */}
       {defaultHTML !== html && (
-        <Tooltip content={t('tabs.preview')} position="top">
-          <button
-            className="bg-white lg:hidden -translate-y-[calc(100%+8px)] absolute left-0 top-0 shadow-md text-gray-950 text-xs font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 hover:brightness-150 transition-all duration-100 cursor-pointer"
-            onClick={() => setView("preview")}
-          >
-            <MdPreview />
-            {t('tabs.preview')}
-          </button>
-        </Tooltip>
+        <div className="relative w-full">
+          <Tooltip content={t('tabs.preview')} position="top">
+            <button
+              className="bg-white lg:hidden fixed left-3 -top-10 shadow-md text-gray-950 text-xs font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 hover:brightness-150 transition-all duration-100 cursor-pointer z-20"
+              onClick={() => setView("preview")}
+            >
+              <MdPreview />
+              {t('tabs.preview')}
+            </button>
+          </Tooltip>
+        </div>
       )}
+      
       <div className="w-full relative flex items-center h-8">
         <div className="flex items-center gap-2 shrink-0">
           <RiSparkling2Fill className={`text-lg lg:text-xl transition-colors duration-300 ${isAiWorking ? "text-pink-500" : "text-gray-500 group-focus-within:text-pink-500"}`} />
@@ -721,6 +919,93 @@ styles.textContent = `
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #ccc;
+  }
+  
+  /* 添加动画效果 */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+  
+  /* 添加水平滑入动画 */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      max-width: 0;
+    }
+    to {
+      opacity: 1;
+      max-width: 200px;
+    }
+  }
+  
+  .animate-slideIn {
+    animation: slideIn 0.2s ease-out forwards;
+    overflow: hidden;
+  }
+  
+  /* 优化确认弹窗动画 */
+  @keyframes popIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.8) translateY(5px);
+    }
+    70% {
+      transform: scale(1.05) translateY(-2px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  
+  .animate-popIn {
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  
+  /* 添加确认和取消按钮的悬停效果 */
+  .confirm-btn {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .confirm-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.3);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+  }
+  
+  .confirm-btn:hover::after {
+    animation: ripple 0.6s ease-out;
+  }
+  
+  @keyframes ripple {
+    0% {
+      transform: scale(0, 0);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(20, 20);
+      opacity: 0;
+    }
   }
 `;
 document.head.appendChild(styles);
