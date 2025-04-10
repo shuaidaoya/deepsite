@@ -19,6 +19,9 @@ import { TEMPLATES, CDN_URLS } from "./utils/templates.js";
 // Load environment variables from .env file
 dotenv.config();
 
+// 检测Vercel环境 - Vercel会自动设置VERCEL环境变量
+const isVercelEnvironment = process.env.VERCEL === '1' || process.env.VERCEL === 'true' || !!process.env.VERCEL;
+
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -32,7 +35,10 @@ const DEFAULT_TEMPERATURE = process.env.DEFAULT_TEMPERATURE || 0;
 
 app.use(cookieParser());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "dist")));
+
+// 优化静态文件路径处理
+const staticPath = isVercelEnvironment ? path.join(process.cwd(), "dist") : path.join(__dirname, "dist");
+app.use(express.static(staticPath));
 
 const getPTag = (repoId) => {
   return `<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - <a href="https://enzostvs-deepsite.hf.space?remix=${repoId}" style="color: #fff;text-decoration: underline;" target="_blank" >🧬 Remix</a></p>`;
@@ -645,9 +651,21 @@ app.get("/api/remix/:username/:repo", async (req, res) => {
 });
 
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  // 在Vercel上使用正确的路径
+  const indexPath = isVercelEnvironment 
+    ? path.join(process.cwd(), "dist", "index.html")
+    : path.join(__dirname, "dist", "index.html");
+  res.sendFile(indexPath);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Vercel在生产环境中不需要监听特定端口，因为它会代理请求
+if (isVercelEnvironment) {
+  console.log('Running on Vercel - no need to listen on a specific port');
+} else {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+// 导出Express应用实例，Vercel需要它
+export default app;
