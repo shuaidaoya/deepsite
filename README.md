@@ -36,9 +36,8 @@ DeepSite 是一个可以基于各类大语言模型的应用程序生成工具�
 | OPENAI_API_KEY | OpenAI 或 DeepSeek API 密钥 | sk-xxxxxxxxxxxxxxxx |
 | OPENAI_MODEL | 使用的模型名称 | deepseek-chat/DeepSeek-V3-0324 或 gpt-4o |
 | OPENAI_BASE_URL | API 基础 URL | https://api.deepseek.com/v1 或 https://api.openai.com/v1 |
-| APP_PORT | 应用端口 (Vercel 会自动管理，可选) | 3000 |
 
-注意：在 Vercel 部署中，`APP_PORT` 变量通常不需要设置，因为 Vercel 会自动管理应用的端口。
+注意：在 Vercel 部署中，由于免费版的Vercel设置的默认超时时间是10s，你需要在项目的**Setting**中配置**Function Max Duration**，免费版最大可以设置为60s。
 
 ### 构建命令
 

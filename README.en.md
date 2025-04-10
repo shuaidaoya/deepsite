@@ -1,5 +1,7 @@
 # DeepSite
 
+English | [中文](./README.md)
+
 > This project is a modified version of [enzostvs/deepsite](https://huggingface.co/spaces/enzostvs/deepsite).
 
 DeepSite is an application generation tool based on various large language models, allowing users to quickly generate various web applications through simple descriptions. The project is built using modern web technology stack, including React, TypeScript, Vite, and Express.
@@ -22,7 +24,7 @@ DeepSite is an application generation tool based on various large language model
 
 You can deploy to Vercel with one click using the button below:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/deepsite)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?https://github.com/kiritoko1029/deepsite)
 
 ### Configure Vercel Environment Variables
 
@@ -34,9 +36,8 @@ During Vercel deployment, you need to configure the following environment variab
 | OPENAI_API_KEY | OpenAI or DeepSeek API key | sk-xxxxxxxxxxxxxxxx |
 | OPENAI_MODEL | Model name to use | deepseek-chat/DeepSeek-V3-0324 or gpt-4o |
 | OPENAI_BASE_URL | API base URL | https://api.deepseek.com/v1 or https://api.openai.com/v1 |
-| APP_PORT | Application port (automatically managed by Vercel, optional) | 3000 |
 
-Note: In Vercel deployment, the `APP_PORT` variable usually doesn't need to be set because Vercel automatically manages the application port.
+Note: In Vercel deployment, due to the default timeout of 10s for the free version of Vercel, you need to configure **Function Max Duration** in the project's **Settings**. The maximum setting for the free version is 60s.
 
 ### Build Commands
 
