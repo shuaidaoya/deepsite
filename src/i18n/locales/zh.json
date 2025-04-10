@@ -5,7 +5,8 @@
   },
   "header": {
     "new": "重置",
-    "resetTooltip": "重置编辑器"
+    "resetTooltip": "重置编辑器",
+    "modelNotConfigured": "未配置模型"
   },
   "settings": {
     "title": "配置",

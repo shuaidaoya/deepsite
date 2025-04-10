@@ -3,6 +3,7 @@ import { PROVIDERS } from "../../../utils/providers.js";
 import classNames from "classnames";
 import { useTranslation } from "react-i18next";
 import { MdSettings } from "react-icons/md";
+import { useModelStore } from "../../store/modelStore";
 
 // 定义模板接口
 interface Template {
@@ -67,12 +68,8 @@ function Settings({
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'templates' | 'model'>('templates');
   
-  // 添加环境变量状态
-  const [envStatus, setEnvStatus] = useState({
-    apiKey: false,
-    baseUrl: false,
-    model: false
-  });
+  // 使用全局状态获取环境变量配置
+  const { envConfig, fetchModelInfo } = useModelStore();
   
   // 添加测试状态
   const [testStatus, setTestStatus] = useState({
@@ -188,15 +185,15 @@ function Settings({
     };
     
     // 检查参数：如果用户没有提供，但后端已配置，则不需要在测试请求中包含
-    if (!testParams.api_key && envStatus.apiKey) {
+    if (!testParams.api_key && envConfig.apiKey) {
       delete testParams.api_key;
     }
     
-    if (!testParams.base_url && envStatus.baseUrl) {
+    if (!testParams.base_url && envConfig.baseUrl) {
       delete testParams.base_url;
     }
     
-    if (!testParams.model && envStatus.model) {
+    if (!testParams.model && envConfig.model) {
       delete testParams.model;
     }
     
@@ -296,31 +293,17 @@ function Settings({
       }
     };
 
-    // 获取环境变量配置状态
-    const fetchEnvStatus = async () => {
-      try {
-        const response = await fetch('/api/check-env');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.ok && data.env) {
-            setEnvStatus(data.env);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch environment status:', error);
-      }
-    };
-    
+    // 如果打开设置面板，获取模板和环境配置信息
     if (open) {
       fetchTemplates();
-      fetchEnvStatus();
+      fetchModelInfo(); // 确保获取最新的环境配置
       
       // 如果有传入模型参数，初始化状态
       if (modelParams) {
         setParams(modelParams);
       }
     }
-  }, [open, selectedTemplate, selectedUI, selectedTools, modelParams, t]);
+  }, [open, selectedTemplate, selectedUI, selectedTools, modelParams, t, fetchModelInfo]);
   
   return (
     <>
@@ -566,14 +549,14 @@ function Settings({
                         <span>OpenAI API Key</span>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                           testStatus.tested && testStatus.success ? 'bg-green-100 text-green-800' :
-                          envStatus.apiKey ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          envConfig.apiKey ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                           <span className={`w-2 h-2 mr-1.5 rounded-full ${
                             testStatus.tested && testStatus.success ? 'bg-green-500' :
-                            envStatus.apiKey ? 'bg-green-500' : 'bg-red-500'
+                            envConfig.apiKey ? 'bg-green-500' : 'bg-red-500'
                           }`}></span>
                           {testStatus.tested && testStatus.success ? t('settings.verified') :
-                          envStatus.apiKey ? t('settings.configured') : t('settings.notConfigured')}
+                          envConfig.apiKey ? t('settings.configured') : t('settings.notConfigured')}
                         </span>
                       </label>
                       <input
@@ -594,14 +577,14 @@ function Settings({
                         <span>API Base URL</span>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                           testStatus.tested && testStatus.success ? 'bg-green-100 text-green-800' :
-                          envStatus.baseUrl ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          envConfig.baseUrl ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                           <span className={`w-2 h-2 mr-1.5 rounded-full ${
                             testStatus.tested && testStatus.success ? 'bg-green-500' :
-                            envStatus.baseUrl ? 'bg-green-500' : 'bg-red-500'
+                            envConfig.baseUrl ? 'bg-green-500' : 'bg-red-500'
                           }`}></span>
                           {testStatus.tested && testStatus.success ? t('settings.verified') :
-                          envStatus.baseUrl ? t('settings.configured') : t('settings.notConfigured')}
+                          envConfig.baseUrl ? t('settings.configured') : t('settings.notConfigured')}
                         </span>
                       </label>
                       <input
@@ -622,14 +605,14 @@ function Settings({
                         <span>Model</span>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                           testStatus.tested && testStatus.success ? 'bg-green-100 text-green-800' :
-                          envStatus.model ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          envConfig.model ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                           <span className={`w-2 h-2 mr-1.5 rounded-full ${
                             testStatus.tested && testStatus.success ? 'bg-green-500' :
-                            envStatus.model ? 'bg-green-500' : 'bg-red-500'
+                            envConfig.model ? 'bg-green-500' : 'bg-red-500'
                           }`}></span>
                           {testStatus.tested && testStatus.success ? t('settings.verified') :
-                           envStatus.model ? t('settings.configured') : t('settings.notConfigured')}
+                           envConfig.model ? t('settings.configured') : t('settings.notConfigured')}
                         </span>
                       </label>
                       <input

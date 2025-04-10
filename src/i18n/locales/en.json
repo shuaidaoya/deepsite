@@ -5,7 +5,8 @@
   },
   "header": {
     "new": "Reset",
-    "resetTooltip": "Reset Editor"
+    "resetTooltip": "Reset Editor",
+    "modelNotConfigured": "Model Not Configured"
   },
   "settings": {
     "title": "Configuration",

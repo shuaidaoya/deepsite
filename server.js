@@ -91,7 +91,8 @@ app.get("/api/check-env", (req, res) => {
       apiKey: apiKeyConfigured,
       baseUrl: baseUrlConfigured,
       model: modelConfigured
-    }
+    },
+    model: process.env.OPENAI_MODEL || ""
   });
 });
 

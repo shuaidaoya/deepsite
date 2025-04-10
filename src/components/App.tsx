@@ -19,6 +19,7 @@ import AskAI from "./ask-ai/ask-ai";
 import Preview from "./preview/preview";
 import Settings from "./settings/settings";
 import { ModelParameters } from "./settings/settings";
+import { useModelStore } from "../store/modelStore";
 
 function App() {
   const { t } = useTranslation();
@@ -37,6 +38,9 @@ function App() {
   const [selectedUI, setSelectedUI] = useState<string | null>(null);
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [modelParams, setModelParams] = useState<ModelParameters | undefined>();
+  
+  // 使用全局状态获取模型信息
+  const { currentModel, setCurrentModel, fetchModelInfo } = useModelStore();
 
   const [currentView, setCurrentView] = useState<"editor" | "preview">(
     "editor"
@@ -77,10 +81,13 @@ function App() {
   // 处理模型参数变更
   const handleModelParamsChange = (params: ModelParameters) => {
     setModelParams(params);
+    if (params.model) {
+      setCurrentModel(params.model);
+    }
     localStorage.setItem("model_params", JSON.stringify(params));
   };
 
-  // 监听模板选择变化 - 仅加载已保存的选择，不加载模板
+  // 监听模板选择变化及初始化应用
   useEffect(() => {
     const storedTemplateId = localStorage.getItem("selected_template");
     if (storedTemplateId) {
@@ -105,12 +112,20 @@ function App() {
     const storedModelParams = localStorage.getItem("model_params");
     if (storedModelParams) {
       try {
-        setModelParams(JSON.parse(storedModelParams));
+        const params = JSON.parse(storedModelParams);
+        setModelParams(params);
+        // 如果存储的参数中有模型信息，设置到全局状态
+        if (params.model) {
+          setCurrentModel(params.model);
+        }
       } catch (e) {
         console.error("Failed to parse stored model params:", e);
       }
     }
-  }, []);
+    
+    // 初始化时加载模型信息
+    fetchModelInfo();
+  }, [fetchModelInfo, setCurrentModel]);
 
   // 重置HTML为指定模板的HTML
   const resetToTemplate = async (templateId: string, shouldShowToast = true) => {
@@ -284,11 +299,15 @@ function App() {
             return;
           }
           if (
-            window.confirm(t("editor.resetConfirm"))
+            html !== defaultHTML &&
+            !window.confirm(t("confirm.reset"))
           ) {
-            resetToTemplate(selectedTemplateId);
+            return;
           }
+          setHtml(defaultHTML);
+          toast.success(t("toast.resetSuccess"));
         }}
+        modelName={currentModel}
       >
         <Settings
           open={openSettings}

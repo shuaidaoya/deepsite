@@ -1,14 +1,17 @@
 # DeepSite
 
+[English](./README.en.md) | 中文
+
 > 本项目是由 [enzostvs/deepsite](https://huggingface.co/spaces/enzostvs/deepsite) 魔改而来。
 
-DeepSite 是一个基于 DeepSeek 大语言模型的应用程序生成工具，允许用户通过简单的描述快速生成各种 Web 应用程序。项目使用现代 Web 技术栈构建，包括 React、TypeScript、Vite 和 Express 等。
+DeepSite 是一个可以基于各类大语言模型的应用程序生成工具，允许用户通过简单的描述快速生成各种 Web 应用程序。项目使用现代 Web 技术栈构建，包括 React、TypeScript、Vite 和 Express 等。
 
 ## 功能特点
 
 - 基于自然语言描述生成完整的 Web 应用程序
+- 内置Vue、及各类组件、工具库生成模版
 - 内置代码编辑器，支持实时预览和编辑
-- 多语言支持
+- 中英文支持
 - 响应式设计，适配各种设备
 
 ## 环境要求
@@ -16,6 +19,33 @@ DeepSite 是一个基于 DeepSeek 大语言模型的应用程序生成工具，�
 - Node.js 18.x 或更高版本
 - npm 或 yarn 包管理器
 - Docker 和 Docker Compose (用于容器化部署)
+
+## Vercel 部署
+
+你可以使用以下按钮一键部署到 Vercel：
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?https://github.com/kiritoko1029/deepsite)
+
+### 配置 Vercel 环境变量
+
+在 Vercel 部署过程中，需要配置以下环境变量：
+> 符合Open AI请求和响应格式的API提供商均可，若不在环境变量中配置，则需要在页面的设置中配置。
+
+| 环境变量 | 描述 | 示例 |
+|---------|------|------|
+| OPENAI_API_KEY | OpenAI 或 DeepSeek API 密钥 | sk-xxxxxxxxxxxxxxxx |
+| OPENAI_MODEL | 使用的模型名称 | deepseek-chat/DeepSeek-V3-0324 或 gpt-4o |
+| OPENAI_BASE_URL | API 基础 URL | https://api.deepseek.com/v1 或 https://api.openai.com/v1 |
+| APP_PORT | 应用端口 (Vercel 会自动管理，可选) | 3000 |
+
+注意：在 Vercel 部署中，`APP_PORT` 变量通常不需要设置，因为 Vercel 会自动管理应用的端口。
+
+### 构建命令
+
+在 Vercel 项目设置中，确保设置了正确的构建命令：
+
+- **构建命令**: `npm run build`
+- **输出目录**: `dist`
 
 ## 本地开发
 
