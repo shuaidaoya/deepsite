@@ -15,15 +15,18 @@ interface PreviewActionsProps {
   html: string;
   isDisabled: boolean;
   onLoadTemplate?: (html: string) => void;
-  // 添加一个属性来控制是否处于代码生成状态
-  isGenerating?: boolean;
+  // 添加自动刷新相关属性
+  autoRefresh?: boolean;
+  onToggleAutoRefresh?: () => void;
+  isGenerating?: boolean; // 保留类型定义，但在实现中不使用
 }
 
 const PreviewActions: FC<PreviewActionsProps> = ({ 
   html, 
   isDisabled, 
   onLoadTemplate,
-  isGenerating = false
+  autoRefresh = false,
+  onToggleAutoRefresh
 }) => {
   const { t } = useTranslation();
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
@@ -32,31 +35,17 @@ const PreviewActions: FC<PreviewActionsProps> = ({
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   
-  // 自动刷新状态
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const autoRefreshIntervalRef = useRef<number | null>(null);
-  const lastRefreshTimeRef = useRef<number>(Date.now());
-  const minRefreshIntervalMs = 1000; // 最小刷新间隔，防止过于频繁刷新
-  
-  // 处理自动刷新功能
+  // 处理点击外部关闭菜单
   useEffect(() => {
-    // 如果自动刷新已启用且当前正在生成代码
-    if (autoRefreshEnabled && isGenerating) {
-      const currentTime = Date.now();
-      // 确保刷新间隔不会太短
-      if (currentTime - lastRefreshTimeRef.current >= minRefreshIntervalMs) {
-        lastRefreshTimeRef.current = currentTime;
-        window.location.reload();
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuExpanded(false);
       }
-    }
-  }, [autoRefreshEnabled, isGenerating, html]);
+    };
 
-  // 清理定时器
-  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      if (autoRefreshIntervalRef.current) {
-        clearInterval(autoRefreshIntervalRef.current);
-      }
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -72,20 +61,6 @@ const PreviewActions: FC<PreviewActionsProps> = ({
     };
     
     initDB();
-  }, []);
-
-  // 处理点击外部关闭菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuExpanded(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, []);
 
   // 复制 HTML 到剪贴板
@@ -148,13 +123,11 @@ const PreviewActions: FC<PreviewActionsProps> = ({
   };
 
   // 切换自动刷新状态
-  const toggleAutoRefresh = () => {
-    setAutoRefreshEnabled(!autoRefreshEnabled);
-    toast.info(
-      !autoRefreshEnabled 
-        ? t('preview.autoRefreshEnabled')
-        : t('preview.autoRefreshDisabled')
-    );
+  const handleToggleAutoRefresh = () => {
+    if (onToggleAutoRefresh) {
+      onToggleAutoRefresh();
+      setIsMenuExpanded(false);
+    }
   };
 
   // 通用按钮样式类
@@ -216,19 +189,19 @@ const PreviewActions: FC<PreviewActionsProps> = ({
             transitionTimingFunction: isMenuExpanded ? 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'ease-in-out'
           }}
         >
-          {/* 自动刷新切换按钮 - 只在此处保留 */}
+          {/* 自动刷新切换按钮 */}
           <button
             className="w-full text-left px-4 py-3.5 flex items-center gap-3 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            onClick={toggleAutoRefresh}
+            onClick={handleToggleAutoRefresh}
             disabled={isDisabled}
             title={t('preview.autoRefresh')}
           >
             <div className="relative">
               <MdAutorenew className="text-lg text-gray-400" />
-              <div className={`absolute -right-1 -top-1 w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-300' : 'bg-gray-400'}`}></div>
+              <div className={`absolute -right-1 -top-1 w-2 h-2 rounded-full ${autoRefresh ? 'bg-green-300' : 'bg-gray-400'}`}></div>
             </div>
             <span>{t('preview.autoRefresh')}</span>
-            {autoRefreshEnabled && <span className="ml-auto text-xs text-green-400">●</span>}
+            {autoRefresh && <span className="ml-auto text-xs text-green-400">●</span>}
           </button>
           
           {/* 复制源代码按钮 */}

@@ -26,10 +26,30 @@ function Preview({
   const [throttledHtml, setThrottledHtml] = useState(html);
   const lastUpdateTimeRef = useRef<number>(Date.now());
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const previousIsAiWorkingRef = useRef(isAiWorking);
+  const htmlRef = useRef(html);
+  
+  // 当HTML内容改变时保存到ref中，以便后续使用
+  useEffect(() => {
+    htmlRef.current = html;
+  }, [html]);
+  
+  // 监测AI生成过程的结束，即使自动刷新关闭也更新内容
+  useEffect(() => {
+    // 当AI工作状态从工作中变为非工作中时
+    if (previousIsAiWorkingRef.current && !isAiWorking) {
+      // AI工作结束时，无论自动刷新是否开启，都要更新预览内容
+      setThrottledHtml(htmlRef.current);
+      console.log("AI工作结束，更新预览内容");
+    }
+    
+    // 更新之前的状态
+    previousIsAiWorkingRef.current = isAiWorking;
+  }, [isAiWorking]);
   
   // 防止过于频繁刷新iframe，特别是在AI生成过程中
   useEffect(() => {
-    // 如果自动刷新关闭，则不更新内容
+    // 如果自动刷新关闭，则不实时更新内容
     if (!autoRefresh) return;
     
     // 统一设置节流时间为至少1秒，AI工作时使用更长的节流时间
@@ -51,17 +71,40 @@ function Preview({
   }, [html, isAiWorking, autoRefresh]);
 
   const handleRefreshIframe = () => {
-    // 无论自动刷新是否开启，都更新当前内容到iframe
+    // 手动刷新时，直接使用最新的HTML内容
     setThrottledHtml(html);
     
+    // 强制刷新iframe以确保内容更新
     if (iframeRef.current) {
       const iframe = iframeRef.current;
-      const content = iframe.srcdoc;
-      iframe.srcdoc = "";
-      setTimeout(() => {
-        iframe.srcdoc = content;
-      }, 10);
+      try {
+        // 尝试直接刷新iframe内容
+        if (iframe.contentWindow) {
+          iframe.contentWindow.location.reload();
+        } else {
+          // 如果无法直接刷新，使用替代方法
+          const content = iframe.srcdoc;
+          iframe.srcdoc = "";
+          setTimeout(() => {
+            iframe.srcdoc = content;
+          }, 10);
+        }
+      } catch (error) {
+        console.error("刷新iframe失败:", error);
+        // 使用备用的重载方法
+        const content = html;
+        iframe.srcdoc = "";
+        setTimeout(() => {
+          iframe.srcdoc = content;
+        }, 10);
+      }
     }
+    
+    console.log("手动刷新预览内容");
+    toast.info(t('preview.refreshPreview'), {
+      toastId: 'manualRefresh',
+      autoClose: 1000
+    });
   };
 
   // 切换自动刷新状态
@@ -69,6 +112,12 @@ function Preview({
     // 直接设置新值，避免使用回调函数可能导致的多次执行
     const newState = !autoRefresh;
     setAutoRefresh(newState);
+    
+    // 如果开启自动刷新，立即更新一次内容
+    if (newState) {
+      setThrottledHtml(html);
+    }
+    
     // 使用一次性通知，避免多次触发
     toast.info(newState ? t('preview.autoRefreshOn') : t('preview.autoRefreshOff'), {
       toastId: 'autoRefreshToggle' // 使用固定ID确保相同通知不会重复显示
@@ -80,6 +129,8 @@ function Preview({
     if (setHtml) {
       setHtml(templateHtml);
       toast.success(t('preview.templateLoaded'));
+      // 无论自动刷新是否开启，都立即更新预览
+      setThrottledHtml(templateHtml);
     }
   };
 
@@ -121,27 +172,15 @@ function Preview({
             <TbReload />
             {t("preview.refreshPreview")}
           </button>
-          <div className="flex items-center gap-1.5 bg-white lg:bg-gray-950 shadow-md text-gray-950 lg:text-white text-xs lg:text-sm font-medium py-2 px-3 lg:px-4 rounded-lg border border-gray-100 lg:border-gray-900 hover:brightness-110 transition-all duration-100 cursor-pointer"
-            onClick={toggleAutoRefresh}
-            title={autoRefresh ? t('preview.disableAutoRefresh') : t('preview.enableAutoRefresh')}
-          >
-            {/* 自定义Switch开关 */}
-            <div className="relative w-10 h-5 flex items-center">
-              <div 
-                className={`absolute w-full h-full rounded-full transition-colors duration-300 ease-in-out ${
-                  autoRefresh ? 'bg-green-500 opacity-70' : 'bg-gray-500 opacity-30'
-                }`} 
-              />
-              <div 
-                className={`absolute w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ease-in-out ${
-                  autoRefresh ? 'translate-x-5 border border-green-400' : 'translate-x-0.5 border border-gray-300'
-                }`} 
-              />
-            </div>
-            <span className="ml-1">{t("preview.autoRefresh")}</span>
-          </div>
         </div>
-        <PreviewActions html={html} isDisabled={isAiWorking || isResizing} onLoadTemplate={handleLoadTemplate} />
+        <PreviewActions 
+          html={html} 
+          isDisabled={isAiWorking || isResizing} 
+          onLoadTemplate={handleLoadTemplate}
+          isGenerating={isAiWorking}
+          autoRefresh={autoRefresh}
+          onToggleAutoRefresh={toggleAutoRefresh}
+        />
       </div>
       )}
     </div>
