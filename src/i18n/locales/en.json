@@ -74,6 +74,8 @@
     "optimizePrompt": "Optimize Prompt",
     "promptOptimized": "Prompt optimized successfully!",
     "generate": "Generate",
+    "stopGeneration": "Stop Generation",
+    "generationStopped": "Generation stopped",
     "showPreview": "Show Preview",
     "history": "History",
     "conversationHistory": "Conversation History",
@@ -100,7 +102,12 @@
     "confirmDelete": "Confirm delete?",
     "messageDeleted": "Message deleted",
     "editMessage": "Edit message",
-    "copyToPrompt": "Copy to input"
+    "copyToPrompt": "Copy to input",
+    "newConversation": "New Conversation",
+    "keepCurrentDesign": "Do you want to keep the current design?",
+    "startingNewConversation": "Starting new conversation with current design",
+    "startingFreshConversation": "Starting fresh conversation with default template",
+    "generatedCode": "Generated code"
   },
   "toast": {
     "contentRestored": "Previous HTML content restored from local storage.",
@@ -138,7 +145,9 @@
     "disableAutoRefresh": "Disable auto refresh",
     "enableAutoRefresh": "Enable auto refresh",
     "manualRefreshTooltip": "Click to manually refresh preview",
-    "moreActions": "More Actions"
+    "moreActions": "More Actions",
+    "autoRefreshEnabled": "Auto refresh enabled",
+    "autoRefreshDisabled": "Auto refresh disabled"
   },
   "common": {
     "cancel": "Cancel",
@@ -146,7 +155,9 @@
     "close": "Close",
     "confirm": "Confirm",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "copy": "Copy",
+    "copied": "Copied"
   },
   "saveTemplate": {
     "title": "Save HTML Template",

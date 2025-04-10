@@ -49,26 +49,18 @@ OPENAI_BASE_URL=https://api.openai.com/v1
 npm install
 ```
 
-### 启动开发服务器
+### 开发模式运行
 
 ```bash
-npm run dev
+npm run start:dev
 ```
 
 开发服务器将运行在 http://localhost:5173
 
-### 构建项目
-
+### 生产模式运行,构建完前端再启动后端服务
 ```bash
-npm run build
+npm run build && npm run start
 ```
-
-### 启动生产服务器
-
-```bash
-npm start
-```
-
 生产服务器默认运行在 http://localhost:3000，端口可通过 `.env` 文件中的 `APP_PORT` 变量配置。
 
 ## Docker 部署

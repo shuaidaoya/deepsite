@@ -366,6 +366,13 @@ app.post("/api/ask-ai", async (req, res) => {
           break;
         }
 
+        // 检查客户端是否已经断开连接
+        if (res.writableEnded) {
+          console.log("Client disconnected, stopping stream");
+          reader.cancel("Client disconnected");
+          break;
+        }
+
         // 解析 SSE 格式的数据
         const chunk = decoder.decode(value);
         
@@ -387,11 +394,17 @@ app.post("/api/ask-ai", async (req, res) => {
               const content = data.choices?.[0]?.delta?.content || "";
               
               if (content) {
-                res.write(content);
-                completeResponse += content;
-                
-                if (completeResponse.includes("</html>")) {
-                  console.log("Found </html> tag, ending stream");
+                // 检查连接是否中断
+                if (!res.writableEnded) {
+                  res.write(content);
+                  completeResponse += content;
+                  
+                  if (completeResponse.includes("</html>")) {
+                    console.log("Found </html> tag, ending stream");
+                    break;
+                  }
+                } else {
+                  console.log("Cannot write to closed response");
                   break;
                 }
               }
@@ -410,15 +423,17 @@ app.post("/api/ask-ai", async (req, res) => {
             const jsonData = JSON.parse(chunk);
             if (jsonData.choices && jsonData.choices[0]) {
               const content = jsonData.choices[0].message?.content || jsonData.choices[0].delta?.content || "";
-              if (content) {
+              if (content && !res.writableEnded) {
                 res.write(content);
                 completeResponse += content;
               }
             }
           } catch (e) {
             // 不是 JSON，直接作为文本处理
-            res.write(chunk);
-            completeResponse += chunk;
+            if (!res.writableEnded) {
+              res.write(chunk);
+              completeResponse += chunk;
+            }
           }
         }
         
@@ -429,15 +444,22 @@ app.post("/api/ask-ai", async (req, res) => {
       }
       
       console.log("Stream processing completed");
-      res.end();
+      if (!res.writableEnded) {
+        res.end();
+      }
     } catch (streamError) {
       console.error("Error processing stream:", streamError);
+      // 检查是否是客户端中断连接
+      if (streamError.message && (streamError.message.includes("aborted") || streamError.message.includes("canceled"))) {
+        console.log("Client aborted the request");
+      }
+      
       if (!res.headersSent) {
         res.status(500).send({
           ok: false,
           message: "Error processing response stream"
         });
-      } else {
+      } else if (!res.writableEnded) {
         res.end();
       }
     }

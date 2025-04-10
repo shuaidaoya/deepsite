@@ -1,24 +1,64 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { FaSave, FaCopy, FaDownload, FaList, FaEllipsisH } from 'react-icons/fa';
+import { FaSave, FaDownload, FaList, FaEllipsisH } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import SaveTemplateDialog from './save-template-dialog';
 import TemplatesListDialog from './templates-list-dialog';
 import { indexedDBService } from '../../utils/indexedDB';
 
+// 导入更多语义化图标
+import { FaCode } from 'react-icons/fa';
+import { IoReturnUpBack } from "react-icons/io5";
+import { MdAutorenew } from "react-icons/md";
+
 interface PreviewActionsProps {
   html: string;
   isDisabled: boolean;
   onLoadTemplate?: (html: string) => void;
+  // 添加一个属性来控制是否处于代码生成状态
+  isGenerating?: boolean;
 }
 
-const PreviewActions: FC<PreviewActionsProps> = ({ html, isDisabled, onLoadTemplate }) => {
+const PreviewActions: FC<PreviewActionsProps> = ({ 
+  html, 
+  isDisabled, 
+  onLoadTemplate,
+  isGenerating = false
+}) => {
   const { t } = useTranslation();
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [isTemplatesListOpen, setIsTemplatesListOpen] = useState(false);
   const [isDBInitialized, setIsDBInitialized] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  
+  // 自动刷新状态
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const autoRefreshIntervalRef = useRef<number | null>(null);
+  const lastRefreshTimeRef = useRef<number>(Date.now());
+  const minRefreshIntervalMs = 1000; // 最小刷新间隔，防止过于频繁刷新
+  
+  // 处理自动刷新功能
+  useEffect(() => {
+    // 如果自动刷新已启用且当前正在生成代码
+    if (autoRefreshEnabled && isGenerating) {
+      const currentTime = Date.now();
+      // 确保刷新间隔不会太短
+      if (currentTime - lastRefreshTimeRef.current >= minRefreshIntervalMs) {
+        lastRefreshTimeRef.current = currentTime;
+        window.location.reload();
+      }
+    }
+  }, [autoRefreshEnabled, isGenerating, html]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (autoRefreshIntervalRef.current) {
+        clearInterval(autoRefreshIntervalRef.current);
+      }
+    };
+  }, []);
 
   // 初始化 IndexedDB
   useEffect(() => {
@@ -107,59 +147,98 @@ const PreviewActions: FC<PreviewActionsProps> = ({ html, isDisabled, onLoadTempl
     }
   };
 
+  // 切换自动刷新状态
+  const toggleAutoRefresh = () => {
+    setAutoRefreshEnabled(!autoRefreshEnabled);
+    toast.info(
+      !autoRefreshEnabled 
+        ? t('preview.autoRefreshEnabled')
+        : t('preview.autoRefreshDisabled')
+    );
+  };
+
   // 通用按钮样式类
-  const buttonClass = "bg-gray-950 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 rounded-lg flex items-center gap-2 border border-gray-900 hover:brightness-150 transition-all duration-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+  const buttonClass = "shadow-md text-white text-xs lg:text-sm font-medium py-2.5 px-3.5 lg:px-4 rounded-lg flex items-center justify-center gap-2 hover:brightness-125 transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
   
   return (
     <>
       <div className="relative" ref={menuRef}>
-        {/* 主要按钮和展开按钮 */}
+        {/* 主要按钮组 */}
         <div className="flex items-center gap-2">
-          {/* 保存模板按钮作为主要按钮始终显示 */}
+          {/* 返回编辑器按钮 - 只在移动端显示 */}
           <button
-            className="bg-green-700 shadow-md text-white text-xs lg:text-sm font-medium py-2 px-3 rounded-lg flex items-center gap-2 border border-green-800 hover:brightness-150 transition-all duration-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`${buttonClass} bg-gray-800 border border-gray-700 md:hidden`}
+            onClick={() => window.history.back()} // 假设这是返回编辑器的操作
+            title={t('preview.backToEditor')}
+            aria-label={t('preview.backToEditor')}
+          >
+            <IoReturnUpBack className="text-base lg:text-lg" />
+            <span className="hidden sm:inline whitespace-nowrap">{t('preview.backToEditor')}</span>
+          </button>
+          
+          {/* 保存模板按钮 */}
+          <button
+            className={`${buttonClass} bg-green-700 border border-green-600`}
             onClick={handleOpenSaveDialog}
             disabled={isDisabled}
             title={t('preview.saveToDBTooltip')}
+            aria-label={t('preview.saveToDB')}
           >
-            <FaSave />
+            <FaSave className="text-base lg:text-lg" />
             <span className="hidden lg:inline">{t('preview.saveToDB')}</span>
           </button>
           
           {/* 更多按钮 */}
           <button
-            className={`${buttonClass} ${isMenuExpanded ? 'bg-gray-700' : ''}`}
+            className={`${buttonClass} ${isMenuExpanded ? 'bg-gray-700' : 'bg-gray-800'} border border-gray-700`}
             onClick={() => setIsMenuExpanded(!isMenuExpanded)}
             disabled={isDisabled}
             aria-expanded={isMenuExpanded}
             aria-label={t('preview.moreActions')}
             title={t('preview.moreActions')}
           >
-            <FaEllipsisH />
+            <FaEllipsisH className="text-base lg:text-lg" />
+            <span className="hidden lg:inline">{t('preview.moreActions')}</span>
           </button>
         </div>
         
         {/* 展开菜单 */}
         <div 
-          className={`absolute right-0 bottom-full mb-2 bg-gray-900 rounded-lg shadow-lg overflow-hidden transition-all ${
+          className={`absolute right-0 bottom-full mb-2 bg-gray-900 rounded-lg shadow-xl overflow-hidden transition-all ${
             isMenuExpanded 
               ? 'opacity-100 max-h-[300px] transform scale-100 translate-y-0' 
               : 'opacity-0 max-h-0 transform scale-95 translate-y-2 pointer-events-none'
           }`}
           style={{ 
-            width: '200px', 
+            width: '220px', 
             zIndex: 50,
             transitionDuration: '250ms',
             transitionTimingFunction: isMenuExpanded ? 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'ease-in-out'
           }}
         >
-          {/* 复制按钮 */}
+          {/* 自动刷新切换按钮 - 只在此处保留 */}
           <button
-            className="w-full text-left px-4 py-3 flex items-center gap-3 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            className="w-full text-left px-4 py-3.5 flex items-center gap-3 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            onClick={toggleAutoRefresh}
+            disabled={isDisabled}
+            title={t('preview.autoRefresh')}
+          >
+            <div className="relative">
+              <MdAutorenew className="text-lg text-gray-400" />
+              <div className={`absolute -right-1 -top-1 w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-300' : 'bg-gray-400'}`}></div>
+            </div>
+            <span>{t('preview.autoRefresh')}</span>
+            {autoRefreshEnabled && <span className="ml-auto text-xs text-green-400">●</span>}
+          </button>
+          
+          {/* 复制源代码按钮 */}
+          <button
+            className="w-full text-left px-4 py-3.5 flex items-center gap-3 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             onClick={handleCopyHtml}
             disabled={isDisabled}
+            title={t('preview.copy')}
           >
-            <FaCopy className="text-gray-400" />
+            <FaCode className="text-blue-400 text-lg" />
             <span>{t('preview.copy')}</span>
           </button>
           

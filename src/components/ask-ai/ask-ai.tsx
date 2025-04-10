@@ -5,13 +5,14 @@ import { RiSparkling2Fill } from "react-icons/ri";
 import { GrSend } from "react-icons/gr";
 import { toast } from "react-toastify";
 import { MdPreview } from "react-icons/md";
-import { BiLoaderAlt } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
 import { defaultHTML } from "./../../../utils/consts";
 import SuccessSound from "./../../assets/success.mp3";
 import { ModelParameters } from "../settings/settings";
 import { TbWand } from "react-icons/tb";
 import { IoMdTime } from "react-icons/io";
+import { FaStop } from "react-icons/fa";
+import { IoMdAdd } from "react-icons/io";
 // import SpeechPrompt from "../speech-prompt/speech-prompt";
 
 // 定义对话消息的接口
@@ -40,8 +41,14 @@ const Dialog = ({ isOpen, onClose, title, children }: DialogProps) => {
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black/5 z-50 flex items-center justify-center p-4"
+      onClick={onClose} // 点击背景关闭弹窗
+    >
+      <div 
+        className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col animate-fadeIn"
+        onClick={(e) => e.stopPropagation()} // 防止点击内容区域时关闭弹窗
+      >
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold">{title}</h3>
           <button 
@@ -138,6 +145,12 @@ function AskAI({
   // 当前查看的消息
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   
+  // 添加新建对话确认弹窗状态
+  const [showNewConversationConfirm, setShowNewConversationConfirm] = useState(false);
+  
+  // 添加AbortController引用用于中断生成过程
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
   // 删除确认状态
   const [deletingItemIndex, setDeletingItemIndex] = useState<number | null>(null);
   const [confirmingClearAll, setConfirmingClearAll] = useState(false);
@@ -208,11 +221,9 @@ function AskAI({
   // 从localStorage加载对话历史
   useEffect(() => {
     const savedHistory = localStorage.getItem('chatHistory');
-    console.log('Loading chat history:', savedHistory); // 添加调试日志
     if (savedHistory) {
       try {
         const parsedHistory = JSON.parse(savedHistory);
-        console.log('Parsed history:', parsedHistory); // 添加调试日志
         setChatHistory(parsedHistory);
       } catch (e) {
         console.error('Failed to parse chat history:', e);
@@ -222,7 +233,6 @@ function AskAI({
 
   // 保存对话历史到localStorage
   useEffect(() => {
-    console.log('Saving chat history:', chatHistory); // 添加调试日志
     if (chatHistory.length > 0) {
       localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
     }
@@ -231,6 +241,10 @@ function AskAI({
   const callAi = async () => {
     if (isAiWorking || !prompt.trim()) return;
     setisAiWorking(true);
+
+    // 创建新的AbortController实例
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
 
     // 添加用户消息到历史
     const userMessage: ChatMessage = {
@@ -246,6 +260,9 @@ function AskAI({
       // 获取当前用户语言
       const currentLanguage = i18n.language.startsWith('zh') ? 'zh' : 'en';
       
+      // 提前设置hasAsked状态，避免在生成完成后设置导致布局重新计算
+      setHasAsked(true);
+
       const request = await fetch("/api/ask-ai", {
         method: "POST",
         body: JSON.stringify({
@@ -264,6 +281,7 @@ function AskAI({
         headers: {
           "Content-Type": "application/json",
         },
+        signal, // 添加信号以支持中断
       });
       if (request && request.body) {
         if (!request.ok) {
@@ -281,110 +299,156 @@ function AskAI({
         const decoder = new TextDecoder("utf-8");
 
         const read = async () => {
-          const { done, value } = await reader.read();
-          if (done) {
-            toast.success("AI responded successfully");
-            setPrompt("");
-            setPreviousPrompt(prompt);
-            setisAiWorking(false);
-            setHasAsked(true);
-            playSuccessSound(); // 使用函数播放音效
-            setView("preview");
+          try {
+            const { done, value } = await reader.read();
+            if (done) {
+              toast.success("AI responded successfully");
+              setPrompt("");
+              setPreviousPrompt(prompt);
+              setisAiWorking(false);
+              playSuccessSound(); // 使用函数播放音效
+              setView("preview");
 
-            // Now we have the complete HTML including </html>, so set it to be sure
-            const finalDoc = contentResponse.match(
-              /<!DOCTYPE html>[\s\S]*<\/html>/
-            )?.[0];
-            if (finalDoc) {
-              setHtml(finalDoc);
+              // Now we have the complete HTML including </html>, so set it to be sure
+              const finalDoc = contentResponse.match(
+                /<!DOCTYPE html>[\s\S]*<\/html>/
+              )?.[0];
+              if (finalDoc) {
+                setHtml(finalDoc);
 
-              // 添加AI响应到历史
-              const aiMessage: ChatMessage = {
-                role: 'assistant',
-                content: finalDoc,
-                timestamp: Date.now()
-              };
-              setChatHistory(prev => [...prev, aiMessage]);
-            } else if (contentResponse.includes("<html") && contentResponse.includes("<body")) {
-              // 尝试修复可能不完整的 HTML
-              let fixedHtml = contentResponse;
-              if (!fixedHtml.includes("</body>")) {
-                fixedHtml += "\n</body>";
+                // 添加AI响应到历史
+                const aiMessage: ChatMessage = {
+                  role: 'assistant',
+                  content: finalDoc,
+                  timestamp: Date.now()
+                };
+                setChatHistory(prev => [...prev, aiMessage]);
+              } else if (contentResponse.includes("<html") && contentResponse.includes("<body")) {
+                // 尝试修复可能不完整的 HTML
+                let fixedHtml = contentResponse;
+                if (!fixedHtml.includes("</body>")) {
+                  fixedHtml += "\n</body>";
+                }
+                if (!fixedHtml.includes("</html>")) {
+                  fixedHtml += "\n</html>";
+                }
+                setHtml(fixedHtml);
+
+                // 添加AI响应到历史
+                const aiMessage: ChatMessage = {
+                  role: 'assistant',
+                  content: fixedHtml,
+                  timestamp: Date.now()
+                };
+                setChatHistory(prev => [...prev, aiMessage]);
               }
-              if (!fixedHtml.includes("</html>")) {
-                fixedHtml += "\n</html>";
-              }
-              setHtml(fixedHtml);
 
-              // 添加AI响应到历史
-              const aiMessage: ChatMessage = {
-                role: 'assistant',
-                content: fixedHtml,
-                timestamp: Date.now()
-              };
-              setChatHistory(prev => [...prev, aiMessage]);
+              // 清理AbortController引用
+              abortControllerRef.current = null;
+              return;
             }
 
-            return;
-          }
-
-          const chunk = decoder.decode(value, { stream: true });
-          contentResponse += chunk;
-          
-          // 尝试多种方式匹配有效的 HTML 内容
-          let newHtml = null;
-          
-          // 1. 尝试匹配完整的 DOCTYPE 开头
-          const doctypeMatch = contentResponse.match(/<!DOCTYPE html>[\s\S]*/);
-          if (doctypeMatch) {
-            newHtml = doctypeMatch[0];
-          } 
-          // 2. 尝试匹配 <html 开头
-          else {
-            const htmlMatch = contentResponse.match(/<html[\s\S]*/);
-            if (htmlMatch) {
-              newHtml = htmlMatch[0];
-            }
-            // 3. 尝试匹配 <body 开头
+            const chunk = decoder.decode(value, { stream: true });
+            contentResponse += chunk;
+            
+            // 尝试多种方式匹配有效的 HTML 内容
+            let newHtml = null;
+            
+            // 1. 尝试匹配完整的 DOCTYPE 开头
+            const doctypeMatch = contentResponse.match(/<!DOCTYPE html>[\s\S]*/);
+            if (doctypeMatch) {
+              newHtml = doctypeMatch[0];
+            } 
+            // 2. 尝试匹配 <html 开头
             else {
-              const bodyMatch = contentResponse.match(/<body[\s\S]*/);
-              if (bodyMatch) {
-                newHtml = bodyMatch[0];
+              const htmlMatch = contentResponse.match(/<html[\s\S]*/);
+              if (htmlMatch) {
+                newHtml = htmlMatch[0];
+              }
+              // 3. 尝试匹配 <body 开头
+              else {
+                const bodyMatch = contentResponse.match(/<body[\s\S]*/);
+                if (bodyMatch) {
+                  newHtml = bodyMatch[0];
+                }
               }
             }
-          }
-          
-          if (newHtml) {
-            // Force-close the HTML tag so the iframe doesn't render half-finished markup
-            let partialDoc = newHtml;
-            if (!partialDoc.includes("</body>") && partialDoc.includes("<body")) {
-              partialDoc += "\n</body>";
-            }
-            if (!partialDoc.includes("</html>")) {
-              partialDoc += "\n</html>";
-            }
+            
+            if (newHtml) {
+              // Force-close the HTML tag so the iframe doesn't render half-finished markup
+              let partialDoc = newHtml;
+              if (!partialDoc.includes("</body>") && partialDoc.includes("<body")) {
+                partialDoc += "\n</body>";
+              }
+              if (!partialDoc.includes("</html>")) {
+                partialDoc += "\n</html>";
+              }
 
-            // Throttle the re-renders to avoid flashing/flicker
-            const now = Date.now();
-            if (now - lastRenderTime > 1000) {
-              setHtml(partialDoc);
-              lastRenderTime = now;
-            }
+              // Throttle the re-renders to avoid flashing/flicker
+              const now = Date.now();
+              if (now - lastRenderTime > 1000) {
+                setHtml(partialDoc);
+                lastRenderTime = now;
+              }
 
-            if (partialDoc.length > 200) {
-              onScrollToBottom();
+              if (partialDoc.length > 200) {
+                onScrollToBottom();
+              }
             }
+            read();
+          } catch (error: any) {
+            // 如果是AbortError，不显示错误提示，而是显示中断成功的提示
+            if (error.name === 'AbortError') {
+              toast.info(t('askAI.generationStopped') || "Generation stopped");
+              // 如果已经生成了部分内容，尝试使用它
+              if (contentResponse && contentResponse.includes("<html")) {
+                let fixedHtml = contentResponse;
+                if (!fixedHtml.includes("</body>")) {
+                  fixedHtml += "\n</body>";
+                }
+                if (!fixedHtml.includes("</html>")) {
+                  fixedHtml += "\n</html>";
+                }
+                setHtml(fixedHtml);
+                
+                // 添加部分AI响应到历史
+                const aiMessage: ChatMessage = {
+                  role: 'assistant',
+                  content: fixedHtml,
+                  timestamp: Date.now()
+                };
+                setChatHistory(prev => [...prev, aiMessage]);
+              }
+            } else {
+              console.error("Error reading from stream:", error);
+              toast.error("Error processing AI response");
+            }
+            setisAiWorking(false);
+            abortControllerRef.current = null;
           }
-          read();
         };
 
         read();
       }
-
-       
     } catch (error: any) {
+      // 如果是AbortError，显示适当的消息
+      if (error.name === 'AbortError') {
+        toast.info(t('askAI.generationStopped') || "Generation stopped");
+      } else {
+        setisAiWorking(false);
+        toast.error(error.message);
+      }
+      abortControllerRef.current = null;
+    }
+  };
+
+  // 添加停止生成的函数
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      toast.info(t('askAI.generationStopped') || "Generation stopped");
+      // 立即更新UI状态，不等待abort事件
       setisAiWorking(false);
-      toast.error(error.message);
+      abortControllerRef.current.abort();
     }
   };
 
@@ -500,6 +564,39 @@ function AskAI({
     toast.success(t('askAI.copyToPrompt'));
   };
 
+  // 修改新建对话功能
+  const startNewConversation = () => {
+    // 如果当前正在生成回答，不允许新建对话
+    if (isAiWorking) return;
+    
+    // 如果当前不是默认HTML，显示自定义确认对话框
+    if (html !== defaultHTML) {
+      setShowNewConversationConfirm(true);
+    } else {
+      // 直接开始新对话
+      resetConversation(false);
+    }
+  };
+  
+  // 添加重置对话的功能
+  const resetConversation = (keepDesign: boolean) => {
+    // 重置状态
+    setPrompt("");
+    setPreviousPrompt("");
+    setHasAsked(false);
+    
+    if (!keepDesign) {
+      // 重置为默认HTML
+      setHtml(defaultHTML);
+      toast.info(t('askAI.startingFreshConversation'));
+    } else {
+      toast.info(t('askAI.startingNewConversation'));
+    }
+    
+    // 关闭确认对话框
+    setShowNewConversationConfirm(false);
+  };
+
   return (
     <div
       className={`bg-gray-950 rounded-xl py-2 lg:py-2.5 pl-3.5 lg:pl-4 pr-2 lg:pr-2.5 absolute lg:sticky bottom-3 left-3 lg:bottom-4 lg:left-4 w-[calc(100%-1.5rem)] lg:w-[calc(100%-2rem)] z-10 group ${
@@ -546,33 +643,41 @@ function AskAI({
                         {t("askAI.clearHistory")}
                       </button>
                       
-                      {/* 绝对定位的确认框 */}
+                      {/* 绝对定位的确认框 - 和删除单条消息保持一致 */}
                       <div 
-                        className="absolute right-0 top-0 transform translate-x-full translate-y-0 z-50 flex items-center space-x-2 bg-white rounded-lg p-2 ml-2 shadow-lg animate-popIn border border-gray-100"
-                        style={{ 
-                          marginLeft: '12px', 
-                          whiteSpace: 'nowrap',
+                        className="absolute top-1/2 right-0 z-[999] flex items-center rounded-lg border border-gray-100 animate-popIn bg-white"
+                        style={{
+                          padding: '6px 8px',
                           boxShadow: '0 4px 15px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)',
+                          whiteSpace: 'nowrap',
+                          transform: 'translate(calc(100% + 8px), -50%)',
                           backdropFilter: 'blur(8px)',
                         }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <span className="text-xs text-gray-700 px-2">{t("askAI.confirmClearHistory")}</span>
-                        <button
-                          className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white p-1.5 rounded text-xs transition-all duration-200 shadow-sm confirm-btn"
-                          onClick={confirmClearAll}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                        <button
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded text-xs transition-all duration-200 confirm-btn"
-                          onClick={() => setConfirmingClearAll(false)}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                        <span className="text-xs font-medium text-gray-700 mr-2 select-none">
+                          {t('askAI.confirmClearHistory')}
+                        </span>
+                        <div className="flex space-x-1.5">
+                          <button 
+                            className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 p-1.5 text-white rounded transition-all duration-200 shadow-sm confirm-btn"
+                            onClick={confirmClearAll}
+                            aria-label={t('common.yes')}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button 
+                            className="bg-gray-100 hover:bg-gray-200 p-1.5 text-gray-600 rounded transition-all duration-200 confirm-btn"
+                            onClick={() => setConfirmingClearAll(false)}
+                            aria-label={t('common.no')}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -607,10 +712,21 @@ function AskAI({
                     className={`p-3 rounded-lg text-sm transition-all duration-200 group/item ${
                       msg.role === 'user' 
                         ? 'bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 cursor-pointer shadow-sm' 
-                        : 'bg-gradient-to-r from-gray-50 to-white border border-gray-100'
+                        : msg.role === 'assistant' && msg.content.includes('<html')
+                          ? 'bg-gradient-to-r from-gray-50 to-white hover:from-pink-50 hover:to-indigo-50 border border-gray-100 cursor-pointer relative'
+                          : 'bg-gradient-to-r from-gray-50 to-white border border-gray-100'
                     }`}
-                    onClick={() => msg.role === 'user' && loadPromptFromHistory(msg)}
-                  >
+                    onClick={() => {
+                      if (msg.role === 'user') {
+                        loadPromptFromHistory(msg);
+                      } else if (msg.role === 'assistant' && msg.content.includes('<html')) {
+                        // 直接预览AI生成的HTML
+                        setHtml(msg.content);
+                        setView("preview");
+                        setShowHistory(false);
+                      }
+                    }}
+                  > 
                     <div className="flex justify-between items-center mb-2">
                       <span className={`font-medium flex items-center gap-1.5 ${
                         msg.role === 'user' ? 'text-blue-600' : 'text-gray-700'
@@ -746,6 +862,37 @@ function AskAI({
                             </svg>
                             {t("askAI.viewDetail")}
                           </button>
+                          {msg.role === 'assistant' && msg.content.includes('<html') && (
+                            <button 
+                              className="ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-pink-600 hover:text-pink-500 bg-pink-50 hover:bg-pink-100 rounded-md transition-colors duration-200 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setHtml(msg.content);
+                                setView("preview");
+                                setShowHistory(false);
+                              }}
+                            >
+                              <MdPreview className="text-base" />
+                              {t("askAI.previewThis")}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {/* 为短内容的AI响应也添加预览按钮 */}
+                      {msg.role === 'assistant' && msg.content.includes('<html') && msg.content.length <= 100 && (
+                        <div className="mt-2 flex justify-end">
+                          <button 
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-pink-600 hover:text-pink-500 bg-pink-50 hover:bg-pink-100 rounded-md transition-colors duration-200 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setHtml(msg.content);
+                              setView("preview");
+                              setShowHistory(false);
+                            }}
+                          >
+                            <MdPreview className="text-base" />
+                            {t("askAI.previewThis")}
+                          </button>
                         </div>
                       )}
                     </div>
@@ -757,6 +904,32 @@ function AskAI({
         </div>
       )}
       
+      {/* 新建对话确认对话框 */}
+      <Dialog 
+        isOpen={showNewConversationConfirm}
+        onClose={() => setShowNewConversationConfirm(false)}
+        title={t("askAI.newConversation")}
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">{t('askAI.keepCurrentDesign')}</p>
+          
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 font-medium transition-colors duration-200"
+              onClick={() => resetConversation(false)}
+            >
+              {t('common.no')}
+            </button>
+            <button
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white font-medium transition-colors duration-200"
+              onClick={() => resetConversation(true)}
+            >
+              {t('common.yes')}
+            </button>
+          </div>
+        </div>
+      </Dialog>
+      
       {/* 历史详情弹窗 */}
       <Dialog 
         isOpen={showHistoryDetail}
@@ -765,14 +938,29 @@ function AskAI({
       >
         {selectedMessage && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500 flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {/* 消息元数据区域 - 增强样式 */}
+            <div className={`flex justify-between items-center rounded-lg p-2 ${
+              selectedMessage.role === 'user' 
+                ? 'bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200' 
+                : 'bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200'
+            }`}>
+              <span className="text-sm text-gray-700 flex items-center gap-2 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 {formatTimestamp(selectedMessage.timestamp)}
+                
+                {/* 添加角色标签 */}
+                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full font-medium ${
+                  selectedMessage.role === 'user' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'bg-pink-100 text-pink-700'
+                }`}>
+                  {selectedMessage.role === 'user' ? t("askAI.you") : t("askAI.ai")}
+                </span>
               </span>
-              {selectedMessage.role === 'assistant' && selectedMessage.content.startsWith("<!DOCTYPE html") && (
+              
+              {selectedMessage.role === 'assistant' && selectedMessage.content.includes('<html') && (
                 <button 
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-medium rounded-md hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-sm cursor-pointer"
                   onClick={() => {
@@ -788,36 +976,62 @@ function AskAI({
               )}
             </div>
             
+            {/* 消息内容区域 - 用户消息 */}
             {selectedMessage.role === 'user' ? (
               <div className="whitespace-pre-wrap p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 shadow-sm">
                 <p className="text-gray-700 leading-relaxed">{selectedMessage.content}</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="overflow-auto border rounded-lg bg-gray-50 custom-scrollbar">
-                  {selectedMessage.content.startsWith("<!DOCTYPE html") || 
-                   selectedMessage.content.startsWith("<html") ? (
-                    <pre className="overflow-x-auto p-4 text-xs font-mono text-gray-700 leading-relaxed">
-                      <code>{selectedMessage.content}</code>
-                    </pre>
-                  ) : (
-                    <div className="p-4 whitespace-pre-wrap text-gray-700 leading-relaxed">
-                      {selectedMessage.content}
+                {/* AI响应内容 - HTML代码块 */}
+                {selectedMessage.content.startsWith("<!DOCTYPE html") || 
+                 selectedMessage.content.startsWith("<html") ? (
+                  <div className="overflow-hidden border rounded-lg shadow-sm bg-gray-50">
+                    {/* 代码类型标签和复制按钮 */}
+                    <div className="flex justify-between items-center border-b border-gray-200 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">HTML</span>
+                        <span className="text-xs text-gray-500">{t('askAI.generatedCode')}</span>
+                      </div>
+                      <button 
+                        className="text-gray-500 hover:text-blue-600 text-sm flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedMessage.content);
+                          toast.success(t('common.copied'));
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                        {t('common.copy')}
+                      </button>
                     </div>
-                  )}
-                </div>
+                    
+                    {/* 代码预览区域带行号 */}
+                    <div className="overflow-auto max-h-[60vh] relative custom-scrollbar">
+                      <pre className="overflow-x-auto p-4 text-xs font-mono text-gray-700 leading-relaxed relative">
+                        <code className="language-html">{selectedMessage.content}</code>
+                      </pre>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 whitespace-pre-wrap text-gray-700 leading-relaxed bg-white rounded-lg border border-gray-200 shadow-sm">
+                    {selectedMessage.content}
+                  </div>
+                )}
+             
               </div>
             )}
           </div>
         )}
       </Dialog>
       
-      {/* Preview按钮 - 移到输入框区域外部，使用固定定位 */}
+      {/* Preview按钮 - 使用绝对定位，不影响其他元素布局 */}
       {defaultHTML !== html && (
-        <div className="relative w-full">
+        <div className="absolute left-3 top-[-2.75rem] z-20">
           <Tooltip content={t('tabs.preview')} position="top">
             <button
-              className="bg-white lg:hidden fixed left-3 -top-10 shadow-md text-gray-950 text-xs font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 hover:brightness-150 transition-all duration-100 cursor-pointer z-20"
+              className="bg-white lg:hidden shadow-md text-gray-950 text-xs font-medium py-2 px-3 lg:px-4 rounded-lg flex items-center gap-2 border border-gray-100 hover:brightness-150 transition-all duration-100 cursor-pointer"
               onClick={() => setView("preview")}
             >
               <MdPreview />
@@ -827,7 +1041,8 @@ function AskAI({
         </div>
       )}
       
-      <div className="w-full relative flex items-center h-8">
+      {/* 输入框部分 - 确保高度固定 */}
+      <div className="w-full flex items-center h-12">
         <div className="flex items-center gap-2 shrink-0">
           <RiSparkling2Fill className={`text-lg lg:text-xl transition-colors duration-300 ${isAiWorking ? "text-pink-500" : "text-gray-500 group-focus-within:text-pink-500"}`} />
           
@@ -844,15 +1059,30 @@ function AskAI({
               <IoMdTime className="text-lg" />
             </button>
           </Tooltip>
+          
+          {/* 新建对话按钮 */}
+          <Tooltip content={t("askAI.newConversation")} position="top">
+            <button 
+              className="flex-none flex items-center justify-center rounded-full text-sm font-semibold w-8 h-8 text-center bg-green-600 text-white hover:bg-green-500 shadow-sm disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+              onClick={startNewConversation}
+              disabled={isAiWorking}
+              aria-label={t("askAI.newConversation")}
+            >
+              <IoMdAdd className="text-lg" />
+            </button>
+          </Tooltip>
         </div>
         
-        {/* 确保输入框高度固定 */}
+        {/* 确保输入框高度固定，使用固定尺寸容器 */}
         <div className="flex-1 mx-2">
           <input
             type="text"
             disabled={isAiWorking}
-            className="w-full bg-transparent text-sm outline-none text-white placeholder:text-gray-500 font-code transition-all duration-300 h-8 leading-8"
-            style={{ lineHeight: '2rem' }}
+            className="w-full bg-transparent text-sm outline-none text-white placeholder:text-gray-500 font-code"
+            style={{ 
+              height: '2rem',
+              lineHeight: '2rem'
+            }}
             placeholder={
               isAiWorking 
                 ? t('askAI.working')
@@ -861,7 +1091,8 @@ function AskAI({
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              // 只有在不是输入法编辑状态下的回车才触发发送
+              if (e.key === "Enter" && !(e.nativeEvent as any).isComposing) {
                 callAi();
               }
             }}
@@ -880,15 +1111,17 @@ function AskAI({
               <TbWand className="text-lg" />
             </button>
           </Tooltip>
-          <Tooltip content={t('askAI.generate')} position="top">
+          <Tooltip content={isAiWorking ? t('askAI.stopGeneration') || "Stop generation" : t('askAI.generate')} position="top">
             <button
-              disabled={isAiWorking || !prompt.trim()}
-              className="relative overflow-hidden cursor-pointer flex-none flex items-center justify-center rounded-full text-sm font-semibold w-8 h-8 text-center bg-pink-500 hover:bg-pink-400 text-white shadow-sm dark:shadow-highlight/20 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-all duration-200"
-              onClick={callAi}
-              aria-label={t('askAI.generate')}
+              disabled={!isAiWorking && !prompt.trim()}
+              className={`relative overflow-hidden cursor-pointer flex-none flex items-center justify-center rounded-full text-sm font-semibold w-8 h-8 text-center shadow-sm dark:shadow-highlight/20 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-all duration-200 ${
+                isAiWorking ? "bg-red-500 hover:bg-red-600 text-white" : "bg-pink-500 hover:bg-pink-400 text-white"
+              }`}
+              onClick={isAiWorking ? stopGeneration : callAi}
+              aria-label={isAiWorking ? t('askAI.stopGeneration') || "Stop generation" : t('askAI.generate')}
             >
               {isAiWorking ? (
-                <BiLoaderAlt className="text-lg animate-spin" />
+                <FaStop className="text-lg" />
               ) : (
                 <GrSend className="-translate-x-[1px]" />
               )}
