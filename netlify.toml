@@ -4,9 +4,19 @@
   functions = "netlify/functions"
 
 [dev]
-  command = "npm run start"
+  command = "npm run start:dev"
   port = 3000
   targetPort = 3000
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["utils/*"]
+  
+# 增加函数超时时间，默认值为10秒，付费计划可使用26秒
+[functions.server]
+  included_files = ["utils/*"]
+  external_node_modules = ["express"]
+  timeout = 26
 
 [[redirects]]
   from = "/api/*"
