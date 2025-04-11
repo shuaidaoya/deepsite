@@ -19,8 +19,9 @@ import { TEMPLATES, CDN_URLS } from "./utils/templates.js";
 // Load environment variables from .env file
 dotenv.config();
 
-// 检测Vercel环境 - Vercel会自动设置VERCEL环境变量
+// 检测部署环境
 const isVercelEnvironment = process.env.VERCEL === '1' || process.env.VERCEL === 'true' || !!process.env.VERCEL;
+const isNetlifyEnvironment = process.env.NETLIFY === '1' || process.env.NETLIFY === 'true' || !!process.env.NETLIFY;
 
 const app = express();
 
@@ -37,7 +38,10 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 
 // 优化静态文件路径处理
-const staticPath = isVercelEnvironment ? path.join(process.cwd(), "dist") : path.join(__dirname, "dist");
+const staticPath = isVercelEnvironment 
+  ? path.join(process.cwd(), "dist") 
+  : (isNetlifyEnvironment ? path.join(process.cwd(), "dist") : path.join(__dirname, "dist"));
+  
 app.use(express.static(staticPath));
 
 const getPTag = (repoId) => {
@@ -665,13 +669,14 @@ app.get("*", (_req, res) => {
 });
 
 // Vercel在生产环境中不需要监听特定端口，因为它会代理请求
-if (isVercelEnvironment) {
-  console.log('Running on Vercel - no need to listen on a specific port');
+// Netlify环境也不需要监听端口
+if (isVercelEnvironment || isNetlifyEnvironment) {
+  console.log(`Running on ${isVercelEnvironment ? 'Vercel' : 'Netlify'} - no need to listen on a specific port`);
 } else {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 }
 
-// 导出Express应用实例，Vercel需要它
+// 导出Express应用实例，Vercel和Netlify都需要它
 export default app;
