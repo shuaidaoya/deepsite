@@ -10,4 +10,5 @@ services:
       - OPENAI_MODEL=deepseek-ai/DeepSeek-V3-0324
       - OPENAI_BASE_URL=https://api.openai.com/v1
       - APP_PORT=3000
+      - IP_RATE_LIMIT=100
     restart: always

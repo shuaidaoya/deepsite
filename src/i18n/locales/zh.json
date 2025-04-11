@@ -200,6 +200,14 @@
   },
   "errors": {
     "optimizePromptFailed": "优化提示词失败",
-    "optimizationFailed": "优化提示词失败"
+    "optimizationFailed": "优化提示词失败",
+    "rateLimitExceeded": "请求频率超过限制，请稍后再试",
+    "rateLimitExceededWithTime": "请求频率超过限制，请在 {{minutes}} 分钟后再试",
+    "aiRequestFailed": "请求AI时发生错误",
+    "processingResponseFailed": "处理服务器响应失败",
+    "aiResponseError": "处理AI响应时出错"
+  },
+  "success": {
+    "aiResponseSuccess": "AI响应成功"
   }
 } 

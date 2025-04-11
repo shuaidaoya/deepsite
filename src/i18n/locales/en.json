@@ -200,6 +200,14 @@
   },
   "errors": {
     "optimizePromptFailed": "Failed to optimize prompt",
-    "optimizationFailed": "Failed to optimize prompt"
+    "optimizationFailed": "Failed to optimize prompt",
+    "rateLimitExceeded": "Too many requests. Please try again later.",
+    "rateLimitExceededWithTime": "Too many requests. Please try again in {{minutes}} minutes.",
+    "aiRequestFailed": "An error occurred while requesting AI",
+    "processingResponseFailed": "Failed to process response from server",
+    "aiResponseError": "Error processing AI response"
+  },
+  "success": {
+    "aiResponseSuccess": "AI responded successfully"
   }
 } 

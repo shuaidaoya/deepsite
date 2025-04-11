@@ -289,10 +289,37 @@ function AskAI({
       if (request && request.body) {
         if (!request.ok) {
           try {
+            // 特殊处理429错误码（请求过多）
+            if (request.status === 429) {
+              // 尝试解析响应获取剩余等待时间
+              try {
+                const rateLimitData = await request.json();
+                // 优先使用服务器返回的消息，这样可以获得已本地化的消息
+                if (rateLimitData.message) {
+                  toast.error(rateLimitData.message);
+                } 
+                // 如果没有消息但有等待时间，使用客户端翻译
+                else if (rateLimitData.waitTimeMinutes) {
+                  toast.error(t('errors.rateLimitExceededWithTime', {minutes: rateLimitData.waitTimeMinutes}) || 
+                    `请求频率超过限制，请在 ${rateLimitData.waitTimeMinutes} 分钟后再试`);
+                } 
+                // 兜底消息
+                else {
+                  toast.error(t('errors.rateLimitExceeded') || "请求频率超过限制，请稍后再试");
+                }
+              } catch (parseError) {
+                // 如果无法解析响应，则显示通用错误消息
+                console.error("Error parsing rate limit response:", parseError);
+                toast.error(t('errors.rateLimitExceeded') || "请求频率超过限制，请稍后再试");
+              }
+              setisAiWorking(false);
+              return;
+            }
+            
             const res = await request.json();
-            toast.error(res.message || "An error occurred while requesting AI");
+            toast.error(res.message || t('errors.aiRequestFailed'));
           } catch (parseError) {
-            toast.error("Failed to process response from server");
+            toast.error(t('errors.processingResponseFailed'));
             console.error("JSON parsing error:", parseError);
           }
           setisAiWorking(false);
@@ -305,7 +332,7 @@ function AskAI({
           try {
             const { done, value } = await reader.read();
             if (done) {
-              toast.success("AI responded successfully");
+              toast.success(t('success.aiResponseSuccess'));
               setPrompt("");
               setPreviousPrompt(prompt);
               setisAiWorking(false);
@@ -424,7 +451,7 @@ function AskAI({
               }
             } else {
               console.error("Error reading from stream:", error);
-              toast.error("Error processing AI response");
+              toast.error(t('errors.aiResponseError'));
             }
             setisAiWorking(false);
             abortControllerRef.current = null;
@@ -439,7 +466,7 @@ function AskAI({
         toast.info(t('askAI.generationStopped') || "Generation stopped");
       } else {
         setisAiWorking(false);
-        toast.error(error.message);
+        toast.error(error.message || t('errors.aiRequestFailed'));
       }
       abortControllerRef.current = null;
     }

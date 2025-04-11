@@ -36,6 +36,9 @@ During Vercel deployment, you need to configure the following environment variab
 | OPENAI_API_KEY | OpenAI or DeepSeek API key | sk-xxxxxxxxxxxxxxxx |
 | OPENAI_MODEL | Model name to use | deepseek-chat/DeepSeek-V3-0324 or gpt-4o |
 | OPENAI_BASE_URL | API base URL | https://api.deepseek.com/v1 or https://api.openai.com/v1 |
+| IP_RATE_LIMIT | Maximum requests per hour per IP | 100 |
+
+> Note: If IP_RATE_LIMIT is not set or set to a value less than or equal to 0, IP rate limiting will not be enabled.
 
 Note: In Vercel deployment, due to the default timeout of 10s for the free version of Vercel, you need to configure **Function Max Duration** in the project's **Settings**. The maximum setting for the free version is 60s.
 
@@ -70,6 +73,7 @@ APP_PORT=3000
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-4o
 OPENAI_BASE_URL=https://api.openai.com/v1
+IP_RATE_LIMIT=100  # Max requests per hour per IP, set to 0 or omit to disable rate limiting
 ```
 
 ### Install Dependencies
@@ -113,6 +117,7 @@ services:
       - OPENAI_MODEL=gpt-4o
       - OPENAI_BASE_URL=https://api.openai.com/v1
       - APP_PORT=3000
+      - IP_RATE_LIMIT=100  # Max requests per hour per IP, set to 0 to disable limiting
     restart: unless-stopped
 ```
 
@@ -140,6 +145,7 @@ docker run -d -p 30002:3000 --name deepsite \
   -e OPENAI_MODEL=gpt-4o \
   -e OPENAI_BASE_URL=https://api.openai.com/v1 \
   -e APP_PORT=3000 \
+  -e IP_RATE_LIMIT=100 \
   deepsite
 ```
 

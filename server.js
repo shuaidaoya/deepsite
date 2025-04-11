@@ -19,9 +19,13 @@ import { TEMPLATES, CDN_URLS } from "./utils/templates.js";
 // Load environment variables from .env file
 dotenv.config();
 
-// 检测部署环境
+// 检测Vercel环境 - Vercel会自动设置VERCEL环境变量
 const isVercelEnvironment = process.env.VERCEL === '1' || process.env.VERCEL === 'true' || !!process.env.VERCEL;
-const isNetlifyEnvironment = process.env.NETLIFY === '1' || process.env.NETLIFY === 'true' || !!process.env.NETLIFY;
+
+// IP访问限制 - 如果未配置或值<=0则不限制
+const IP_RATE_LIMIT = parseInt(process.env.IP_RATE_LIMIT) || 0;
+// 用于存储IP访问记录的缓存
+const ipRequestCache = {};
 
 const app = express();
 
@@ -38,11 +42,104 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 
 // 优化静态文件路径处理
-const staticPath = isVercelEnvironment 
-  ? path.join(process.cwd(), "dist") 
-  : (isNetlifyEnvironment ? path.join(process.cwd(), "dist") : path.join(__dirname, "dist"));
-  
+const staticPath = isVercelEnvironment ? path.join(process.cwd(), "dist") : path.join(__dirname, "dist");
 app.use(express.static(staticPath));
+
+// IP限流中间件 - 检查每个IP的访问频率
+app.use((req, res, next) => {
+  // 如果未配置限制或限制值<=0，则跳过限流检查
+  if (IP_RATE_LIMIT <= 0) {
+    req.rateLimit = { limited: false };
+    return next();
+  }
+  
+  // 获取客户端IP地址
+  const clientIp = req.headers['x-forwarded-for'] || 
+                   req.connection.remoteAddress || 
+                   req.socket.remoteAddress;
+                   
+  // 静态资源请求不计入限制
+  if (req.path.startsWith('/assets/') || 
+      req.path.endsWith('.js') || 
+      req.path.endsWith('.css') || 
+      req.path.endsWith('.ico') || 
+      req.path.endsWith('.png') || 
+      req.path.endsWith('.jpg') || 
+      req.path.endsWith('.svg')) {
+    req.rateLimit = { limited: false };
+    return next();
+  }
+  
+  const now = Date.now();
+  const hourAgo = now - 3600000; // 1小时前的时间戳
+  
+  // 初始化IP记录
+  if (!ipRequestCache[clientIp]) {
+    ipRequestCache[clientIp] = [];
+  }
+  
+  // 清理1小时前的请求记录
+  ipRequestCache[clientIp] = ipRequestCache[clientIp].filter(timestamp => timestamp > hourAgo);
+  
+  // 计算当前请求数和剩余请求数
+  const requestCount = ipRequestCache[clientIp].length;
+  const remainingRequests = IP_RATE_LIMIT - requestCount;
+  
+  // 将限流信息添加到请求对象中，供后续处理使用
+  req.rateLimit = {
+    limited: requestCount >= IP_RATE_LIMIT,
+    requestCount,
+    remainingRequests,
+    clientIp
+  };
+  
+  // 检查是否超过限制
+  if (req.rateLimit.limited) {
+    // 找出最早的请求时间，计算何时可以再次请求
+    const oldestRequest = Math.min(...ipRequestCache[clientIp]);
+    const resetTime = oldestRequest + 3600000; // 最早的请求时间 + 1小时
+    const waitTimeMs = resetTime - now;
+    const waitTimeMinutes = Math.ceil(waitTimeMs / 60000); // 转换为分钟并向上取整
+    
+    // 获取客户端可能的语言设置
+    const clientLang = req.headers['accept-language'] || 'en';
+    const isZhClient = clientLang.toLowerCase().includes('zh');
+    
+    console.log(`Rate limit exceeded for IP: ${clientIp}, can try again in ${waitTimeMinutes} minutes`);
+    
+    // 根据语言返回合适的消息
+    const message = isZhClient 
+      ? `请求频率超过限制，请在 ${waitTimeMinutes} 分钟后再试`
+      : `Too many requests. Please try again in ${waitTimeMinutes} minutes.`;
+    
+    return res.status(429).send({
+      ok: false,
+      message: message,
+      waitTimeMinutes: waitTimeMinutes,
+      resetTime: resetTime
+    });
+  }
+  
+  // 记录本次请求时间戳（只在中间件中记录，避免重复计数）
+  ipRequestCache[clientIp].push(now);
+  
+  // 定期清理过期IP记录(每小时)
+  if (!global.ipCacheCleanupInterval) {
+    global.ipCacheCleanupInterval = setInterval(() => {
+      const cleanupTime = Date.now() - 3600000;
+      for (const ip in ipRequestCache) {
+        ipRequestCache[ip] = ipRequestCache[ip].filter(timestamp => timestamp > cleanupTime);
+        // 如果没有记录，删除该IP的缓存
+        if (ipRequestCache[ip].length === 0) {
+          delete ipRequestCache[ip];
+        }
+      }
+      console.log(`IP cache cleanup completed. Active IPs: ${Object.keys(ipRequestCache).length}`);
+    }, 3600000);
+  }
+  
+  next();
+});
 
 const getPTag = (repoId) => {
   return `<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - <a href="https://enzostvs-deepsite.hf.space?remix=${repoId}" style="color: #fff;text-decoration: underline;" target="_blank" >🧬 Remix</a></p>`;
@@ -94,15 +191,18 @@ app.get("/api/check-env", (req, res) => {
   const apiKeyConfigured = !!process.env.OPENAI_API_KEY;
   const baseUrlConfigured = !!process.env.OPENAI_BASE_URL;
   const modelConfigured = !!process.env.OPENAI_MODEL;
+  const ipRateLimitConfigured = !!process.env.IP_RATE_LIMIT && parseInt(process.env.IP_RATE_LIMIT) > 0;
   
   return res.status(200).send({
     ok: true,
     env: {
       apiKey: apiKeyConfigured,
       baseUrl: baseUrlConfigured,
-      model: modelConfigured
+      model: modelConfigured,
+      ipRateLimit: ipRateLimitConfigured
     },
-    model: process.env.OPENAI_MODEL || ""
+    model: process.env.OPENAI_MODEL || "",
+    ipRateLimit: parseInt(process.env.IP_RATE_LIMIT) || 0
   });
 });
 
@@ -315,6 +415,22 @@ app.post("/api/ask-ai", async (req, res) => {
       ok: false,
       message: "Missing required fields",
     });
+  }
+
+  // 获取客户端IP - 用于日志记录
+  const clientIp = req.headers['x-forwarded-for'] || 
+                   req.connection.remoteAddress || 
+                   req.socket.remoteAddress;
+                   
+  // 使用中间件已计算的限流信息记录日志
+  if (req.rateLimit) {
+    if (req.rateLimit.limited === false) {
+      console.log(`API request from IP: ${clientIp}, rate limit: unlimited or not applicable`);
+    } else {
+      console.log(`API request from IP: ${clientIp}, requests this hour: ${req.rateLimit.requestCount}/${IP_RATE_LIMIT}, remaining: ${req.rateLimit.remainingRequests}`);
+    }
+  } else {
+    console.log(`API request from IP: ${clientIp}, rate limit information not available`);
   }
 
   // 设置响应头
@@ -669,14 +785,13 @@ app.get("*", (_req, res) => {
 });
 
 // Vercel在生产环境中不需要监听特定端口，因为它会代理请求
-// Netlify环境也不需要监听端口
-if (isVercelEnvironment || isNetlifyEnvironment) {
-  console.log(`Running on ${isVercelEnvironment ? 'Vercel' : 'Netlify'} - no need to listen on a specific port`);
+if (isVercelEnvironment) {
+  console.log('Running on Vercel - no need to listen on a specific port');
 } else {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 }
 
-// 导出Express应用实例，Vercel和Netlify都需要它
+// 导出Express应用实例，Vercel需要它
 export default app;

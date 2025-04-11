@@ -36,6 +36,9 @@ DeepSite 是一个可以基于各类大语言模型的应用程序生成工具�
 | OPENAI_API_KEY | OpenAI 或 DeepSeek API 密钥 | sk-xxxxxxxxxxxxxxxx |
 | OPENAI_MODEL | 使用的模型名称 | deepseek-chat/DeepSeek-V3-0324 或 gpt-4o |
 | OPENAI_BASE_URL | API 基础 URL | https://api.deepseek.com/v1 或 https://api.openai.com/v1 |
+| IP_RATE_LIMIT | 每个IP每小时最大请求次数 | 100 |
+
+> 注意：如果 IP_RATE_LIMIT 未设置或设为小于等于0的值，则不会启用IP访问限制。
 
 注意：在 Vercel 部署中，由于免费版的Vercel设置的默认超时时间是10s，你需要在项目的**Setting**中配置**Function Max Duration**，免费版最大可以设置为60s。
 
@@ -70,6 +73,7 @@ APP_PORT=3000
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-4o
 OPENAI_BASE_URL=https://api.openai.com/v1
+IP_RATE_LIMIT=100  # 每IP每小时最大请求数，设为0或不设置则不限制
 ```
 
 ### 安装依赖
@@ -113,6 +117,7 @@ services:
       - OPENAI_MODEL=gpt-4o
       - OPENAI_BASE_URL=https://api.openai.com/v1
       - APP_PORT=3000
+      - IP_RATE_LIMIT=100  # 每IP每小时最大请求数，设为0则不限制
     restart: unless-stopped
 ```
 
@@ -140,6 +145,7 @@ docker run -d -p 30002:3000 --name deepsite \
   -e OPENAI_MODEL=gpt-4o \
   -e OPENAI_BASE_URL=https://api.openai.com/v1 \
   -e APP_PORT=3000 \
+  -e IP_RATE_LIMIT=100 \
   deepsite
 ```
 
