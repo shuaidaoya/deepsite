@@ -35,7 +35,7 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.APP_PORT || 3000;
 const MODEL_ID = process.env.OPENAI_MODEL || "deepseek-chat";
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://api.deepseek.com/v1";
-const DEFAULT_MAX_TOKENS = process.env.DEFAULT_MAX_TOKENS || 6000;
+const DEFAULT_MAX_TOKENS = process.env.DEFAULT_MAX_TOKENS || 4096;
 const DEFAULT_TEMPERATURE = process.env.DEFAULT_TEMPERATURE || 0;
 
 app.use(cookieParser());
